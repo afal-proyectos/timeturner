@@ -42,5 +42,38 @@
         "fin_utc": "2026-11-16T16:21:09.034760+00:00",
         "minutos_pausa": 0.0,
         "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "b507d2f9-d935-49e2-885b-4975aef27409",
+        "libro_id": "c7471f3e-ce2c-4bb9-98b0-f8b748da1f3a",
+        "usuario_id": "usuario_afal_demo",
+        "pagina_inicio": 0,
+        "pagina_fin": 2,
+        "inicio_utc": "2026-11-18T19:43:12.822112+00:00",
+        "fin_utc": "2026-11-18T19:44:07.801688+00:00",
+        "minutos_pausa": 0.0,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "9388e62d-18e4-4f1a-aac6-ecc735e57977",
+        "libro_id": "81802434-cbdc-4e86-afc1-bafba0fb0348",
+        "usuario_id": "usuario_afal_demo",
+        "pagina_inicio": 19,
+        "pagina_fin": 20,
+        "inicio_utc": "2026-11-18T22:30:54.461370+00:00",
+        "fin_utc": "2026-11-18T22:32:54.553187+00:00",
+        "minutos_pausa": 0.0,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "84e6321b-2186-4ac7-992b-1b9fe689bac7",
+        "libro_id": "81802434-cbdc-4e86-afc1-bafba0fb0348",
+        "usuario_id": "usuario_afal_demo",
+        "pagina_inicio": 21,
+        "pagina_fin": 22,
+        "inicio_utc": "2026-11-21T15:31:50.850171+00:00",
+        "fin_utc": "2026-11-21T15:32:12.814349+00:00",
+        "minutos_pausa": 0.0,
+        "estado": "GUARDADA"
     }
 ]

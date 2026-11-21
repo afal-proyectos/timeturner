@@ -16,5 +16,32 @@
         "genero": "Lteratura Latinoamericana",
         "total_paginas": 600,
         "portada_url": ""
+    },
+    {
+        "id_libro": "c7471f3e-ce2c-4bb9-98b0-f8b748da1f3a",
+        "usuario_id": "usuario_afal_demo",
+        "titulo": "El Principito",
+        "autor": "No me Acuerdo",
+        "genero": "Infantil",
+        "total_paginas": 70,
+        "portada_url": ""
+    },
+    {
+        "id_libro": "0478e1f2-29a8-41dc-b90e-17d82a36c849",
+        "usuario_id": "usuario_afal_demo",
+        "titulo": "Papelucho",
+        "autor": "Marcela Paz",
+        "genero": "Infantil",
+        "total_paginas": 200,
+        "portada_url": ""
+    },
+    {
+        "id_libro": "b72417b5-adad-4ece-ab31-27bec5779743",
+        "usuario_id": "usuario_afal_demo",
+        "titulo": "Noches Blancas",
+        "autor": "Dov",
+        "genero": "Literatura Rusa",
+        "total_paginas": 500,
+        "portada_url": ""
     }
 ]

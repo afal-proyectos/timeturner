@@ -1,7 +1,6 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional
 
 from dominio.models_libro import Libro
 from dominio.models_sesion import EstadoSesion, SesionLectura
@@ -79,7 +78,7 @@ class RepositorioJSON(IRepositorioDatos):
             if item.get("usuario_id") == usuario_id
         ]
 
-    def obtener_libro_por_id(self, id_libro: str) -> Optional[Libro]:
+    def obtener_libro_por_id(self, id_libro: str) -> list[Libro | None]:
         libros_dict = self._leer_archivo(self.ruta_libros)
         for item in libros_dict:
             if item.get("id_libro") == id_libro:
