@@ -61,5 +61,14 @@
         "genero": "Latinoamericana",
         "total_paginas": 250,
         "portada_url": ""
+    },
+    {
+        "id_libro": "59dbebd9-40a0-4fcb-bc45-6dc6651ded61",
+        "usuario_id": "00000000-0000-0000-0000-000000000001",
+        "titulo": "Pater Pan y Wendy",
+        "autor": "No me acuerdo",
+        "genero": "Infantil",
+        "total_paginas": 150,
+        "portada_url": ""
     }
 ]

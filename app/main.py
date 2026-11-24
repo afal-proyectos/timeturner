@@ -3,8 +3,10 @@ import sys
 
 from dotenv import load_dotenv
 
+load_dotenv()
 # Añadir directorio 'src' al path de Python
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+
 
 from src.dominio.controlador_lectura import ControladorLectura
 from src.persistencia.repo_hibirido import RepositorioHibrido
@@ -20,7 +22,7 @@ def main():
     repo_local = RepositorioJSON(ruta_base="data")
 
     # 2. Repositorio en la Nube
-    SUPABASE_URL = os.getenv("SUPABASEURL", "")
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
     repo_nube = None

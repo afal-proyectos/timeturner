@@ -169,15 +169,18 @@ class RepositorioHibrido(IRepositorioDatos):
                         sincronizados += 1
                         ids_exitosos.append(id_obj)
                 elif tipo == "sesion":
-                    # Buscar en los archivos JSON de sesiones
-                    for libro in self.local.obtener_libros(usuario_id=""):
-                        sesiones = self.local.obtener_sesiones(libro.id_libro)
-                        for s in sesiones:
-                            if s.id_sesion == id_obj:
-                                self.nube.registrar_sesion(s)
-                                sincronizados += 1
-                                ids_exitosos.append(id_obj)
-                                break
+                    # Leer directamente las sesiones locales
+                    sesiones_raw = self.local._leer_archivo(self.ruta_sesiones)
+                    for item in sesiones_raw:
+                        if item.get("id_sesion") == id_obj:
+                            # Reconstruir entidad SesionLectura y subir
+                            sesion = self.local.obtener_sesiones(item["libro_id"])
+                            for s in sesion:
+                                if s.id_sesion == id_obj:
+                                    self.nube.registrar_sesion(s)
+                                    sincronizados += 1
+                                    ids_exitosos.append(id_obj)
+                                    break
             except Exception:  # noqa: BLE001, S112
                 continue
 
