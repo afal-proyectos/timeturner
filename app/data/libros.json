@@ -43,5 +43,23 @@
         "genero": "Literatura Rusa",
         "total_paginas": 500,
         "portada_url": ""
+    },
+    {
+        "id_libro": "06e12118-fd3a-4daf-8f13-ebfcd05f0a20",
+        "usuario_id": "00000000-0000-0000-0000-000000000001",
+        "titulo": "El Nombre de la Rosa",
+        "autor": "Umberto Ecco",
+        "genero": "Clásico Moderno",
+        "total_paginas": 5500,
+        "portada_url": ""
+    },
+    {
+        "id_libro": "da3913c9-1438-4565-86d2-4d8427597828",
+        "usuario_id": "00000000-0000-0000-0000-000000000001",
+        "titulo": "De amor y otros demonios",
+        "autor": "Garcia marquez",
+        "genero": "Latinoamericana",
+        "total_paginas": 250,
+        "portada_url": ""
     }
 ]

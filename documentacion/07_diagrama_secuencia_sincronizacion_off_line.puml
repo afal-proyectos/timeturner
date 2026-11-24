@@ -1,0 +1,81 @@
+@startuml 07_diagrama_secuencia_sincronizacion_offline
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor "Lector" as lector
+
+box "Capa de Presentación (UI)" #LightBlue
+participant "UI / DetectorRed" as UI
+end box
+
+box "Capa de Dominio / Sincronización" #LightGreen
+participant "GestorSincronizacion" as sync
+participant "sesion: SesionLectura" as sesion
+end box
+
+box "Capa de Persistencia (Local & Cloud)" #LightYellow
+participant "RepositorioJSON\n(Local)" as repo_local
+participant "RepositorioSupabase\n(Nube)" as repo_nube
+end box
+
+database "Supabase PostgreSQL\n(Cloud DB)" as cloud_db
+
+== Escenario A: Guardado en Modo Offline (Sin Red) ==
+lector -> UI : Finaliza sesión de lectura
+activate UI
+UI -> sync : guardar_sesion(sesion)
+activate sync
+
+' 1. Guardado inmediato en local con bandera de pendiente
+sync -> repo_local : registrar_sesion(sesion, estado_sync="PENDIENTE")
+activate repo_local
+repo_local --> sync : Ok (Guardado localmente)
+deactivate repo_local
+
+' 2. Intento de envío a la nube
+sync -> repo_nube : registrar_sesion(sesion)
+activate repo_nube
+repo_nube --> sync : Excepción / Timeout (Sin Red)
+deactivate repo_nube
+
+sync --> UI : Confirmación Guardado ("Modo Offline")
+deactivate sync
+UI --> lector : Muestra: "Guardado en dispositivo. Se sincronizará al conectar."
+deactivate UI
+
+== Escenario B: Sincronización Automática al Reconectar ==
+UI -> sync : evento_red_disponible() / inicio_app()
+activate UI
+activate sync
+
+sync -> repo_local : obtener_sesiones_pendientes()
+activate repo_local
+repo_local --> sync : Lista<SesionLectura> (pendientes)
+deactivate repo_local
+
+alt Existen registros pendientes
+    loop Por cada sesión pendiente
+        sync -> repo_nube : registrar_sesion(sesion)
+        activate repo_nube
+        repo_nube -> cloud_db : UPSERT / INSERT registro
+        activate cloud_db
+        cloud_db --> repo_nube : 201 Created / Ok
+        deactivate cloud_db
+        repo_nube --> sync : Exitoso
+        deactivate repo_nube
+
+        ' Marca el archivo JSON local como sincronizado
+        sync -> repo_local : actualizar_estado_sync(id_sesion, "SINCRONIZADO")
+        activate repo_local
+        repo_local --> sync : Ok
+        deactivate repo_local
+    end
+end
+
+sync --> UI : ResumenSincronizacion(exitosos, fallidos)
+deactivate sync
+UI --> lector : Notificación: "☁️ Nube actualizada: X sesiones sincronizadas"
+deactivate UI
+
+@enduml
