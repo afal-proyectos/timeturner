@@ -1,6 +1,7 @@
 import os
 import sys
 
+import flet as ft
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,15 +10,15 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 
 from src.dominio.controlador_lectura import ControladorLectura
+from src.dominio.servicio_autenticacion import ServicioAutenticacion
 from src.persistencia.repo_hibirido import RepositorioHibrido
 from src.persistencia.repo_json import RepositorioJSON
 from src.persistencia.repo_supabase import RepositorioSupabase
-from src.presentacion.cliente import CLI
+from src.presentacion.app_flet import AppFlet
 
 
 def main():
-    print("Iniciando LeerJuntos con Repositorio Híbrido (Offline-First)...")
-
+    print("Iniciando LeerJuntos Flet UI (Simulación Smartphone 1080x2400)...")
     # 1. Instanciar Repositorio JSON (crea data/libros.json y data/sesiones.json si no existen)
     repo_local = RepositorioJSON(ruta_base="data")
 
@@ -48,13 +49,16 @@ def main():
 
     # 4. Instanciar Controlador de la Capa de Dominio
     controlador = ControladorLectura(repositorio=repo_hibrido)
+    servicio_auth = ServicioAutenticacion(repositorio=repo_hibrido)
 
-    # 5. Lanzar Interfaz CLI
-    app = CLI(
-        controlador=controlador,
-        usuario_id_defecto="00000000-0000-0000-0000-000000000001",
-    )
-    app.iniciar()
+    # 5. arrancar con app Flet
+    def startup(page: ft.Page):
+        page.title = "Leer Juntos"
+
+        app_flet = AppFlet(controlador=controlador, servicio_auth=servicio_auth)
+        app_flet.main(page)
+
+    ft.run(startup)
 
 
 if __name__ == "__main__":
