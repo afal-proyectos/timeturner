@@ -77,3 +77,8 @@ CREATE POLICY "Los usuarios pueden insertar sus propias sesiones"
 
 CREATE POLICY "Los usuarios pueden actualizar sus propias sesiones" 
     ON public.reading_sessions FOR UPDATE USING (auth.uid() = usuario_id);
+
+
+-- Permitir acceso temporal de lectura y escritura a la tabla profiles durante desarrollo
+CREATE POLICY "Permite acceso anonimo temporal a profiles" 
+    ON public.profiles FOR ALL USING (true) WITH CHECK (true);

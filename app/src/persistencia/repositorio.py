@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from dominio.models_libro import Libro
 from dominio.models_sesion import SesionLectura
+from dominio.models_usuario import Usuario
 
 
 class IRepositorioDatos(ABC):
@@ -33,3 +34,13 @@ class IRepositorioDatos(ABC):
     @abstractmethod
     def obtener_sesiones(self, libro_id: str) -> list[SesionLectura]:
         """Obtiene el historial de sesiones asociadas a un libro especifico."""
+
+        # --- Gestión de Sesiones de usuarios ---
+
+    @abstractmethod
+    def guardar_usuario(self, usuario: Usuario) -> bool:
+        pass
+
+    @abstractmethod
+    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+        pass

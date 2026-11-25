@@ -1,5 +1,6 @@
 from dominio.models_libro import Libro
 from dominio.models_sesion import EstadoSesion, SesionLectura
+from dominio.models_usuario import Usuario
 from supabase import Client, create_client
 
 from persistencia.repositorio import IRepositorioDatos
@@ -100,3 +101,34 @@ class RepositorioSupabase(IRepositorioDatos):
         except Exception as e:
             print(f"[Supabase Error] Error al obtener sesiones: {e}")
             return []
+        # ----------Tabla usuario----------
+
+    def guardar_usuario(self, usuario: Usuario) -> bool:
+        try:
+            datos = {
+                "id_usuario": usuario.id_usuario,
+                "email": usuario.email,
+                "apodo": usuario.apodo,
+                "clave_hash": usuario.clave_hash,
+                "rol": usuario.rol,
+            }
+            res = self.client.table("profiles").upsert(datos).execute()
+            return len(res.data) > 0
+        except Exception as e:
+            print(f"[Supabase Error] No se pudo guardar el usuario: {e}")
+            raise e
+
+    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+        try:
+            res = (
+                self.client.table("profiles")
+                .select("*")
+                .eq("apodo", apodo)
+                .single()
+                .execute()
+            )
+            if res.data:
+                return Usuario.from_dict(res.data)
+            return None
+        except Exception:
+            return None

@@ -3,6 +3,7 @@ import os
 
 from dominio.models_libro import Libro
 from dominio.models_sesion import SesionLectura
+from dominio.models_usuario import Usuario
 
 from persistencia.repo_json import RepositorioJSON
 from persistencia.repo_supabase import RepositorioSupabase
@@ -147,6 +148,48 @@ class RepositorioHibrido(IRepositorioDatos):
 
         return sesiones_locales
 
+    # --- Operaciones de Usuarios ---
+
+    def guardar_usuario(self, usuario: Usuario) -> bool:
+        """Guarda el usuario localmente en JSON y sincroniza con Supabase."""
+        # 1. Guardar primero en el almacenamiento local (JSON)
+        exito_local = self.local.guardar_usuario(usuario)
+
+        # 2. Replicar en Supabase si hay conexión disponible
+        if self.nube:
+            try:
+                self.nube.guardar_usuario(usuario)
+                self._desmarcar_pendiente(usuario.id_usuario)
+                print(
+                    f"☁️ [Sync OK] Perfil de '{usuario.apodo}' respaldado en Supabase."
+                )
+            except Exception:
+                print(
+                    f"📶 [Modo Offline] Perfil de '{usuario.apodo}' guardado localmente."
+                )
+                self._marcar_pendiente(usuario.id_usuario, "usuario")
+        else:
+            self._marcar_pendiente(usuario.id_usuario, "usuario")
+
+        return exito_local
+
+    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+        """Busca el usuario en el almacenamiento local; si no existe, lo busca en la nube."""
+        # 1. Buscar primero en local para máxima velocidad
+        usuario = self.local.obtener_usuario_por_apodo(apodo)
+
+        # 2. Si no se encuentra en JSON pero hay conexión a la nube, consultar Supabase
+        if not usuario and self.nube:
+            try:
+                usuario = self.nube.obtener_usuario_por_apodo(apodo)
+                if usuario:
+                    # Descargar y guardar localmente para futuras consultas sin red
+                    self.local.guardar_usuario(usuario)
+            except Exception as e:
+                print(f"No se a encontrado el apodo: {e}")
+
+        return usuario
+
     # --- Proceso de Sincronización al recuperar conexión ---
 
     def sincronizar_pendientes(self) -> dict[str, int]:
@@ -181,6 +224,15 @@ class RepositorioHibrido(IRepositorioDatos):
                                     sincronizados += 1
                                     ids_exitosos.append(id_obj)
                                     break
+                elif tipo == "usuario":
+                    usuarios_raw = self.local._leer_archivo(self.local.ruta_usuario)
+                    for item in usuarios_raw:
+                        if item.get("id_usuario") == id_obj:
+                            u = Usuario.from_dict(item)
+                            self.nube.guardar_usuario(u)
+                            ids_exitosos.append(id_obj)
+                            sincronizados += 1
+                            break
             except Exception:  # noqa: BLE001, S112
                 continue
 

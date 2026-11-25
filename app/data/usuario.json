@@ -1,0 +1,10 @@
+[
+    {
+        "id_usuario": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
+        "email": "ale@gmail.com",
+        "apodo": "Ale",
+        "clave_hash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
+        "rol": "Lector",
+        "fecha_registro": "2026-11-25T14:46:47.796614+00:00"
+    }
+]

@@ -1,9 +1,7 @@
-# import time
-# from typing import Optional
-
 from dominio.calcular_proyecciones import CalculadorProyecciones
 from dominio.controlador_lectura import ControladorLectura
 from dominio.models_sesion import EstadoSesion
+from dominio.servicio_autenticacion import ServicioAutenticacion
 
 # from dominio.servicio_metricaslibro import ServicioMetricasLibro
 from dominio.servicio_metricaspersonal import ServicioMetricasPersonal
@@ -17,7 +15,11 @@ class CLI:
         self.usuario_id = usuario_id_defecto
 
     def iniciar(self) -> None:
-        """Bucle principal de la aplicación CLI."""
+        """Flujo Principal: primer Login/Registro, luego menú de biblioteca"""
+        if not self._menu_autenticacion():
+            return
+
+        """una vez verificado, se ingresa al menú principal usando self.usuario_actual.id_usuario"""
         while True:
             self._mostrar_menu_principal()
             opcion = input("Selecciona una opción (0-5): ").strip()
@@ -273,3 +275,47 @@ class CLI:
         print(f"• Horas totales leídas: {acum['horas_leidas_anual']} hrs")
         print(f"• Libros completados al 100%: {acum['libros_terminados_anual']}")
         print(f"• Total de sesiones de lectura: {acum['total_sesiones_anual']}")
+
+    def _menu_autenticacion(self) -> bool:
+        while True:
+            while True:
+                print("\n" + "=" * 50)
+                print("        📚 LEERJUNTOS - INICIO DE SESION          ")
+                print("=" * 50)
+                print("1. Iniciar Sesión (Alias y Contraseña)")
+                print("2. Crear nueva cuenta")
+                print("0. Salir")
+                print("=" * 50)
+
+                op = input("Selecciona una opción: ").strip()
+
+                if op == "1":
+                    apodo = input("Alias (máx 8 caracteres): ").strip()
+                    password = input("Contraseña: ").strip()
+                    self.servicio_auth = ServicioAutenticacion(self.controlador.repo)
+                    exito, mensaje, usuario = self.servicio_auth.iniciar_sesion(
+                        apodo, password
+                    )
+                    print(f"\n{mensaje}")
+                    if exito and usuario:
+                        self.usuario_id = usuario.id_usuario
+                        self.usuario_actual = usuario
+                        return True
+
+                elif op == "2":
+                    print("\n--- 📝 Registro de Nuevo Lector ---")
+                    email = input("Correo electrónico: ").strip()
+                    apodo = input("Alias (máx 8 caracteres): ").strip()
+                    password = input("Contraseña (4 a 8 caracteres): ").strip()
+                    self.servicio_auth = ServicioAutenticacion(self.controlador.repo)
+                    exito, mensaje, usuario = self.servicio_auth.registrar_usuario(
+                        email, apodo, password
+                    )
+                    print(f"\n{mensaje}")
+                    if exito and usuario:
+                        self.usuario_id = usuario.id_usuario
+                        self.usuario_actual = usuario
+                        return True
+
+                elif op == "0":
+                    return False

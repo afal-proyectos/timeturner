@@ -70,5 +70,14 @@
         "genero": "Infantil",
         "total_paginas": 150,
         "portada_url": ""
+    },
+    {
+        "id_libro": "a7660d50-0188-4f31-9ce0-ab900c029a50",
+        "usuario_id": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
+        "titulo": "La telaraña de Carlota",
+        "autor": "No me acuerdo",
+        "genero": "Infantil",
+        "total_paginas": 95,
+        "portada_url": ""
     }
 ]

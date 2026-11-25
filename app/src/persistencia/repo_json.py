@@ -4,6 +4,7 @@ from datetime import datetime
 
 from dominio.models_libro import Libro
 from dominio.models_sesion import EstadoSesion, SesionLectura
+from dominio.models_usuario import Usuario
 
 from persistencia.repositorio import IRepositorioDatos
 
@@ -17,6 +18,7 @@ class RepositorioJSON(IRepositorioDatos):
         self.ruta_base = ruta_base
         self.ruta_libros = os.path.join(self.ruta_base, "libros.json")
         self.ruta_sesiones = os.path.join(self.ruta_base, "sesiones.json")
+        self.ruta_usuario = os.path.join(self.ruta_base, "usuario.json")
 
         # Asegura la existencia del directorio data/ y de los archivos base
         self._inicializar_almacenamiento()
@@ -141,3 +143,23 @@ class RepositorioJSON(IRepositorioDatos):
                 resultado.append(sesion)
 
         return resultado
+
+    # --------------CRUD de Usuario-------------------------
+    def guardar_usuario(self, usuario: Usuario) -> bool:
+        usuarios = self._leer_archivo(self.ruta_usuario)
+        actualizado = False
+        for i, u in enumerate(usuarios):
+            if u.get("id_usuario") == usuario.id_usuario:
+                usuarios[i] = usuario.to_dict()
+                actualizado = True
+                break
+        if not actualizado:
+            usuarios.append(usuario.to_dict())
+        return self._escribir_archivo(self.ruta_usuario, usuarios)
+
+    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+        usuarios = self._leer_archivo(self.ruta_usuario)
+        for u in usuarios:
+            if u.get("apodo").lower() == apodo.lower():
+                return Usuario.from_dict(u)
+        return None

@@ -86,5 +86,16 @@
         "fin_utc": "2026-11-24T14:51:19.668750+00:00",
         "minutos_pausa": 0.0,
         "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "ef294484-f9ca-4aee-8fd3-cc332284e297",
+        "libro_id": "a7660d50-0188-4f31-9ce0-ab900c029a50",
+        "usuario_id": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
+        "pagina_inicio": 0,
+        "pagina_fin": 20,
+        "inicio_utc": "2026-11-25T15:10:55.227751+00:00",
+        "fin_utc": "2026-11-25T15:24:18.504010+00:00",
+        "minutos_pausa": 0.0,
+        "estado": "GUARDADA"
     }
 ]
