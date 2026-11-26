@@ -97,5 +97,14 @@
         "genero": "Literatura",
         "total_paginas": 500,
         "portada_url": ""
+    },
+    {
+        "id_libro": "b9e4ac30-0a6d-495d-9ead-3b0bb5086ac6",
+        "usuario_id": "d2358807-38cd-4f19-aaef-4b6481186c6a",
+        "titulo": "Peter pan",
+        "autor": "BM",
+        "genero": "Infantil",
+        "total_paginas": 250,
+        "portada_url": ""
     }
 ]
