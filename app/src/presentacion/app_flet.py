@@ -4,6 +4,7 @@ from dominio.calcular_proyecciones import CalculadorProyecciones
 from dominio.controlador_lectura import ControladorLectura
 from dominio.models_sesion import EstadoSesion
 from dominio.servicio_autenticacion import ServicioAutenticacion
+from dominio.servicio_gestor_grupo import GestorGrupos
 
 
 def _boton(texto, color_fondo, on_click, **kwargs):
@@ -18,22 +19,24 @@ def _boton(texto, color_fondo, on_click, **kwargs):
 
 
 class AppFlet:
-    """Interfaz Móvil en Flet para LeerJuntos (Simulación Smartphone FHD 1080x2400)."""
+    """Interfaz Móvil en Flet para Time Tuerner (Simulación Smartphone FHD 1080x2400)."""
 
     def __init__(
         self,
         controlador: ControladorLectura,
         servicio_auth: ServicioAutenticacion,
+        gestor_grupos: GestorGrupos,
     ):
         self.controlador = controlador
         self.servicio_auth = servicio_auth
+        self.gestor_grupos = gestor_grupos
         self.usuario_actual = None
         self.sesion_activa = None
         self.libro_seleccionado = None
 
     def main(self, page: ft.Page):
         self.page = page
-        self.page.title = "LeerJuntos - FHD Mobile Prototype"
+        self.page.title = "Time Turner - FHD Mobile Prototype"
 
         # Proporción de aspecto 1080 x 2400 px (Píxeles lógicos Flet)
         self.page.window.width = 360
@@ -93,7 +96,7 @@ class AppFlet:
         dlg_login = ft.AlertDialog(
             modal=True,
             title=ft.Text(
-                "📚 LeerJuntos - Iniciar Sesión",
+                "📚 TimeTurner - Iniciar Sesión",
                 color=ft.Colors.BLACK,
                 weight=ft.FontWeight.BOLD,
             ),
@@ -193,11 +196,22 @@ class AppFlet:
                     ],
                     spacing=2,
                 ),
-                ft.IconButton(
-                    icon=ft.Icons.LOGOUT,
-                    icon_color=ft.Colors.RED_600,
-                    tooltip="Cerrar Sesión",
-                    on_click=self._abrir_modal_login,
+                ft.Row(
+                    [
+                        ft.IconButton(
+                            icon=ft.Icons.GROUP,
+                            icon_color=ft.Colors.RED_600,
+                            tooltip="Mis Grupos",
+                            on_click=lambda _: self._abrir_modal_mis_grupos(),
+                        ),
+                        ft.IconButton(
+                            icon=ft.Icons.LOGOUT,
+                            icon_color=ft.Colors.RED_600,
+                            tooltip="Cerrar Sesión",
+                            on_click=self._abrir_modal_login,
+                        ),
+                    ],
+                    spacing=0,
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -521,3 +535,366 @@ class AppFlet:
             bgcolor=ft.Colors.WHITE,
         )
         self._mostrar_dialog(dlg_met)
+
+    # ========================================================
+    # 6. GRUPOS DE LECTURA (LISTA, CREAR, UNIRSE, TABLERO, CHAT)
+    # ========================================================
+    # Navegación entre diálogos: cada paso cierra el diálogo actual
+    # (pop_dialog) y abre el siguiente (show_dialog).
+
+    def _ir_a_mis_grupos(self, e=None):
+        """Cierra el diálogo actual y vuelve a la lista de grupos."""
+        self._cerrar_dialog()
+        self._abrir_modal_mis_grupos()
+
+    def _abrir_modal_mis_grupos(self):
+        """Muestra los grupos del usuario y permite crear o unirse."""
+        grupos = self.gestor_grupos.repo.obtener_grupos_usuario(
+            self.usuario_actual.id_usuario
+        )
+        list_grupos = ft.ListView(expand=True, spacing=10, height=250)
+
+        if not grupos:
+            list_grupos.controls.append(
+                ft.Text(
+                    "No perteneces a ningún grupo aún.",
+                    color=ft.Colors.GREY_600,
+                    italic=True,
+                )
+            )
+        else:
+            for g in grupos:
+                es_admin = g.admin_id == self.usuario_actual.id_usuario
+                rol_txt = " (Admin)" if es_admin else " (Miembro)"
+
+                def ir_tablero(e, grp=g):
+                    self._cerrar_dialog()
+                    self._abrir_modal_tablero_cruzado(grp)
+
+                def ir_chat(e, grp=g):
+                    self._cerrar_dialog()
+                    self._abrir_modal_chat(grp)
+
+                card_g = ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                f"{g.nombre}{rol_txt}",
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLACK,
+                            ),
+                            ft.Text(
+                                f"Código de acceso: {g.codigo_acceso}",
+                                size=12,
+                                color=ft.Colors.GREY_700,
+                            ),
+                            ft.Row(
+                                [
+                                    _boton(
+                                        "📊 Tablero", ft.Colors.BLUE_600, ir_tablero
+                                    ),
+                                    _boton("💬 Chat", ft.Colors.BLUE_600, ir_chat),
+                                ],
+                                alignment=ft.MainAxisAlignment.END,
+                                spacing=5,
+                            ),
+                        ],
+                        spacing=5,
+                    ),
+                    padding=10,
+                    border=ft.Border.all(1, ft.Colors.GREY_300),
+                    border_radius=8,
+                    bgcolor=ft.Colors.WHITE,
+                )
+                list_grupos.controls.append(card_g)
+
+        def ir_crear(e):
+            self._cerrar_dialog()
+            self._abrir_modal_crear_grupo()
+
+        def ir_unirse(e):
+            self._cerrar_dialog()
+            self._abrir_modal_unirse_grupo()
+
+        dlg_grupos = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(
+                "👥 Mis Grupos de Lectura",
+                color=ft.Colors.BLACK,
+                weight=ft.FontWeight.BOLD,
+            ),
+            content=ft.Column(
+                [
+                    ft.Row(
+                        [
+                            _boton("+ Crear Grupo", ft.Colors.BLUE_600, ir_crear),
+                            _boton("🔑 Unirse", ft.Colors.BLUE_600, ir_unirse),
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+                    ),
+                    ft.Divider(color=ft.Colors.GREY_300),
+                    list_grupos,
+                ],
+                tight=True,
+                spacing=10,
+            ),
+            actions=[_boton("Cerrar", ft.Colors.RED_600, self._cerrar_dialog)],
+            actions_alignment=ft.MainAxisAlignment.END,
+            bgcolor=ft.Colors.WHITE,
+        )
+        self._mostrar_dialog(dlg_grupos)
+
+    def _abrir_modal_crear_grupo(self):
+        txt_nombre = ft.TextField(label="Nombre del Grupo", color=ft.Colors.BLACK)
+        lbl_err = ft.Text("", color=ft.Colors.RED_600, size=12)
+
+        def ejecutar_creacion(e):
+            exito, msj, g = self.gestor_grupos.crear_grupo(
+                txt_nombre.value or "", self.usuario_actual.id_usuario
+            )
+            if exito:
+                self._ir_a_mis_grupos()
+            else:
+                lbl_err.value = msj
+                self.page.update()
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(
+                "➕ Crear Grupo Cerrado",
+                color=ft.Colors.BLACK,
+                weight=ft.FontWeight.BOLD,
+            ),
+            content=ft.Column([txt_nombre, lbl_err], tight=True, spacing=10),
+            actions=[
+                _boton("Cancelar", ft.Colors.RED_600, self._ir_a_mis_grupos),
+                _boton("Crear", ft.Colors.BLUE_600, ejecutar_creacion),
+            ],
+            actions_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            bgcolor=ft.Colors.WHITE,
+        )
+        self._mostrar_dialog(dlg)
+
+    def _abrir_modal_unirse_grupo(self):
+        txt_codigo = ft.TextField(
+            label="Código de 6 dígitos", max_length=6, color=ft.Colors.BLACK
+        )
+        lbl_err = ft.Text("", color=ft.Colors.RED_600, size=12)
+
+        def ejecutar_union(e):
+            exito, msj, g = self.gestor_grupos.unirse_a_grupo(
+                txt_codigo.value or "", self.usuario_actual.id_usuario
+            )
+            if exito:
+                self._ir_a_mis_grupos()
+            else:
+                lbl_err.value = msj
+                self.page.update()
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(
+                "🔑 Unirse a un Grupo",
+                color=ft.Colors.BLACK,
+                weight=ft.FontWeight.BOLD,
+            ),
+            content=ft.Column([txt_codigo, lbl_err], tight=True, spacing=10),
+            actions=[
+                _boton("Cancelar", ft.Colors.RED_600, self._ir_a_mis_grupos),
+                _boton("Unirse", ft.Colors.BLUE_600, ejecutar_union),
+            ],
+            actions_alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            bgcolor=ft.Colors.WHITE,
+        )
+        self._mostrar_dialog(dlg)
+
+    def _abrir_modal_tablero_cruzado(self, grupo):
+        """Progreso cruzado transparente de los miembros, sin rankings competitivos."""
+        tablero_data = self.gestor_grupos.obtener_tablero_cruzado(grupo.id_grupo)
+        list_tablero = ft.ListView(expand=True, spacing=10, height=300)
+
+        for item in tablero_data:
+            card_usr = ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Text(
+                            f"👤 Miembro ID: {item['usuario_id'][:8]}...",
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.BLACK,
+                        ),
+                        ft.Text(
+                            f"📚 Libros: {item['total_libros']} | "
+                            f"⏱️ Horas leídas: {item['total_horas_leidas']} hrs",
+                            size=12,
+                            color=ft.Colors.BLACK,
+                        ),
+                        ft.Text(
+                            "Lecturas activas:",
+                            size=12,
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.GREY_800,
+                        ),
+                        *[
+                            ft.Text(
+                                f"  • {l['titulo']}: {l['porcentaje']}% "
+                                f"(Pág {l['pagina_actual']}/{l['total_paginas']})",
+                                size=11,
+                                color=ft.Colors.GREY_700,
+                            )
+                            for l in item["lecturas_activas"]
+                        ],
+                    ],
+                    spacing=3,
+                ),
+                padding=8,
+                border=ft.Border.all(1, ft.Colors.GREY_300),
+                border_radius=6,
+                bgcolor=ft.Colors.WHITE,
+            )
+            list_tablero.controls.append(card_usr)
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(
+                f"📊 Tablero Cruzado: {grupo.nombre}",
+                color=ft.Colors.BLACK,
+                size=16,
+                weight=ft.FontWeight.BOLD,
+            ),
+            content=list_tablero,
+            actions=[_boton("Volver", ft.Colors.RED_600, self._ir_a_mis_grupos)],
+            actions_alignment=ft.MainAxisAlignment.END,
+            bgcolor=ft.Colors.WHITE,
+        )
+        self._mostrar_dialog(dlg)
+
+    def _abrir_modal_chat(self, grupo):
+        """Chat grupal con envío de mensajes, stickers de ánimo y moderación."""
+        es_admin = grupo.admin_id == self.usuario_actual.id_usuario
+        txt_mensaje = ft.TextField(
+            label="Escribe un mensaje...", color=ft.Colors.BLACK, expand=True
+        )
+        list_chat = ft.ListView(expand=True, spacing=8, height=250)
+
+        def cargar_mensajes():
+            list_chat.controls.clear()
+            mensajes = self.gestor_grupos.obtener_chat_grupo(grupo.id_grupo)
+            for m in mensajes:
+                btn_borrar = []
+                if es_admin:
+                    btn_borrar.append(
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE,
+                            icon_color=ft.Colors.RED_600,
+                            tooltip="Moderar / Eliminar",
+                            on_click=lambda _, msg_id=m.id_mensaje: borrar_msg(msg_id),
+                        )
+                    )
+
+                list_chat.controls.append(
+                    ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Column(
+                                    [
+                                        ft.Text(
+                                            f"ID {m.usuario_id[:8]} [{m.tipo}]:",
+                                            size=10,
+                                            color=ft.Colors.GREY_600,
+                                        ),
+                                        ft.Text(
+                                            m.informacion,
+                                            color=ft.Colors.BLACK,
+                                            size=14,
+                                        ),
+                                    ],
+                                    expand=True,
+                                ),
+                                *btn_borrar,
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        padding=6,
+                        border=ft.Border.all(1, ft.Colors.GREY_200),
+                        border_radius=6,
+                    )
+                )
+            self.page.update()
+
+        def enviar_texto(e):
+            if txt_mensaje.value and txt_mensaje.value.strip():
+                self.gestor_grupos.enviar_mensaje(
+                    grupo.id_grupo,
+                    self.usuario_actual.id_usuario,
+                    txt_mensaje.value.strip(),
+                    tipo="TEXTO",
+                )
+                txt_mensaje.value = ""
+                cargar_mensajes()
+
+        def enviar_sticker(sticker_txt):
+            self.gestor_grupos.enviar_mensaje(
+                grupo.id_grupo,
+                self.usuario_actual.id_usuario,
+                sticker_txt,
+                tipo="STICKER",
+            )
+            cargar_mensajes()
+
+        def borrar_msg(msg_id):
+            self.gestor_grupos.moderar_eliminar_mensaje(
+                msg_id, self.usuario_actual.id_usuario, grupo.id_grupo
+            )
+            cargar_mensajes()
+
+        cargar_mensajes()
+
+        # Barra de Stickers Rápidos de Ánimo
+        stickers_row = ft.Row(
+            [
+                _boton(
+                    "👏 ¡Dale!",
+                    ft.Colors.BLUE_600,
+                    lambda _: enviar_sticker("👏 ¡Excelente ritmo de lectura!"),
+                ),
+                _boton(
+                    "📚 ¡Gran libro!",
+                    ft.Colors.BLUE_600,
+                    lambda _: enviar_sticker("📚 ¡Excelente elección de libro!"),
+                ),
+                _boton(
+                    "⭐ ¡Ánimo!",
+                    ft.Colors.BLUE_600,
+                    lambda _: enviar_sticker("⭐ ¡Sigue así, vas muy bien!"),
+                ),
+            ],
+            scroll=ft.ScrollMode.AUTO,
+        )
+
+        dlg_chat = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(
+                f"💬 Chat: {grupo.nombre}",
+                color=ft.Colors.BLACK,
+                size=16,
+                weight=ft.FontWeight.BOLD,
+            ),
+            content=ft.Column(
+                [
+                    list_chat,
+                    stickers_row,
+                    ft.Row(
+                        [
+                            txt_mensaje,
+                            _boton("Enviar", ft.Colors.BLUE_600, enviar_texto),
+                        ]
+                    ),
+                ],
+                tight=True,
+                spacing=8,
+            ),
+            actions=[_boton("Volver", ft.Colors.RED_600, self._ir_a_mis_grupos)],
+            actions_alignment=ft.MainAxisAlignment.END,
+            bgcolor=ft.Colors.WHITE,
+        )
+        self._mostrar_dialog(dlg_chat)

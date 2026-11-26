@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 from src.dominio.controlador_lectura import ControladorLectura
 from src.dominio.servicio_autenticacion import ServicioAutenticacion
+from src.dominio.servicio_gestor_grupo import GestorGrupos
 from src.persistencia.repo_hibirido import RepositorioHibrido
 from src.persistencia.repo_json import RepositorioJSON
 from src.persistencia.repo_supabase import RepositorioSupabase
@@ -18,7 +19,7 @@ from src.presentacion.app_flet import AppFlet
 
 
 def main():
-    print("Iniciando LeerJuntos Flet UI (Simulación Smartphone 1080x2400)...")
+    print("Iniciando LeerJuntos Flet UI...")
     # 1. Instanciar Repositorio JSON (crea data/libros.json y data/sesiones.json si no existen)
     repo_local = RepositorioJSON(ruta_base="data")
 
@@ -48,6 +49,7 @@ def main():
         )
 
     # 4. Instanciar Controlador de la Capa de Dominio
+    gestor_grupo = GestorGrupos(repositorio=repo_hibrido)
     controlador = ControladorLectura(repositorio=repo_hibrido)
     servicio_auth = ServicioAutenticacion(repositorio=repo_hibrido)
 
@@ -55,7 +57,11 @@ def main():
     def startup(page: ft.Page):
         page.title = "Time Turner"
 
-        app_flet = AppFlet(controlador=controlador, servicio_auth=servicio_auth)
+        app_flet = AppFlet(
+            controlador=controlador,
+            servicio_auth=servicio_auth,
+            gestor_grupos=gestor_grupo,
+        )
         app_flet.main(page)
 
     ft.run(startup)

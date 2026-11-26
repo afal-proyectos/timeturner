@@ -1,0 +1,18 @@
+[
+    {
+        "id_mensaje": "175e939d-84b7-4094-b21b-902110026e90",
+        "grupo_id": "c03773d2-c262-4b0c-b22b-c6c9ba00c596",
+        "usuario_id": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
+        "informacion": "Hola",
+        "tipo": "TEXTO",
+        "fecha_envio": "2026-11-26T17:16:43.474515+00:00"
+    },
+    {
+        "id_mensaje": "8f95843d-b86e-4f35-bc6e-683b5e202a4e",
+        "grupo_id": "c03773d2-c262-4b0c-b22b-c6c9ba00c596",
+        "usuario_id": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
+        "informacion": "⭐ ¡Sigue así, vas muy bien!",
+        "tipo": "STICKER",
+        "fecha_envio": "2026-11-26T17:16:52.205901+00:00"
+    }
+]
