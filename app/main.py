@@ -15,7 +15,7 @@ from src.dominio.servicio_gestor_grupo import GestorGrupos
 from src.persistencia.repo_hibirido import RepositorioHibrido
 from src.persistencia.repo_json import RepositorioJSON
 from src.persistencia.repo_supabase import RepositorioSupabase
-from src.presentacion.app_flet import AppFlet
+from src.presentacion.app_flet import ControladorUI
 
 
 def main():
@@ -57,7 +57,7 @@ def main():
     def startup(page: ft.Page):
         page.title = "Time Turner"
 
-        app_flet = AppFlet(
+        app_flet = ControladorUI(
             controlador=controlador,
             servicio_auth=servicio_auth,
             gestor_grupos=gestor_grupo,

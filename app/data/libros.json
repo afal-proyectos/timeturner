@@ -106,5 +106,14 @@
         "genero": "Infantil",
         "total_paginas": 250,
         "portada_url": ""
+    },
+    {
+        "id_libro": "e701bc8a-3b67-4653-b9d4-17574b9c79bb",
+        "usuario_id": "a95d4e7d-888c-490a-952e-7a1dca087227",
+        "titulo": "Don Quijote",
+        "autor": "Cervantes",
+        "genero": "Clásico",
+        "total_paginas": 500,
+        "portada_url": ""
     }
 ]
