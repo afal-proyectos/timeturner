@@ -1,4 +1,7 @@
+from dominio.models_grupo import Grupo
 from dominio.models_libro import Libro
+from dominio.models_mensaje import Mensaje
+from dominio.models_miembro import MiembroGrupo
 from dominio.models_sesion import EstadoSesion, SesionLectura
 from dominio.models_usuario import Usuario
 from supabase import Client, create_client
@@ -132,3 +135,111 @@ class RepositorioSupabase(IRepositorioDatos):
             return None
         except Exception:
             return None
+
+    # --- Gestión de Grupos y Miembros ---
+
+    def crear_grupo(self, grupo: Grupo) -> bool:
+        try:
+            res = self.client.table("groups").upsert(grupo.to_dict()).execute()
+            return len(res.data) > 0
+        except Exception as e:
+            print(f"[Supabase Error] Error al crear grupo '{grupo.nombre}': {e}")
+            raise e
+
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+        try:
+            res = (
+                self.client.table("groups")
+                .select("*")
+                .eq("codigo_acceso", codigo_acceso.upper())
+                .single()
+                .execute()
+            )
+            if res.data:
+                return Grupo.from_dict(res.data)
+            return None
+        except Exception:
+            return None
+
+    def obtener_grupos_usuario(self, id_usuario: str) -> list[Grupo]:
+        try:
+            # Consultar IDs de grupos a los que pertenece el usuario
+            res_m = (
+                self.client.table("group_members")
+                .select("id_grupo")
+                .eq("id_usuario", id_usuario)
+                .execute()
+            )
+            ids_grupos = [item["id_grupo"] for item in res_m.data]
+
+            if not ids_grupos:
+                return []
+
+            res_g = (
+                self.client.table("groups")
+                .select("*")
+                .in_("id_grupo", ids_grupos)
+                .execute()
+            )
+            return [Grupo.from_dict(g) for g in res_g.data]
+        except Exception as e:
+            print(f"[Supabase Error] Error al obtener grupos del usuario: {e}")
+            return []
+
+    def agregar_miembro_grupo(self, miembro: MiembroGrupo) -> bool:
+        try:
+            res = self.client.table("group_members").upsert(miembro.to_dict()).execute()
+            return len(res.data) > 0
+        except Exception as e:
+            print(f"[Supabase Error] Error al agregar miembro: {e}")
+            raise e
+
+    def obtener_miembros_grupo(self, id_grupo: str) -> list[str]:
+        try:
+            res = (
+                self.client.table("group_members")
+                .select("id_usuario")
+                .eq("id_grupo", id_grupo)
+                .execute()
+            )
+            return [item["id_usuario"] for item in res.data]
+        except Exception as e:
+            print(f"[Supabase Error] Error al obtener miembros: {e}")
+            return []
+
+    # --- Gestión de Chat Grupal ---
+
+    def guardar_mensaje(self, mensaje: Mensaje) -> bool:
+        try:
+            res = self.client.table("messages").upsert(mensaje.to_dict()).execute()
+            return len(res.data) > 0
+        except Exception as e:
+            print(f"[Supabase Error] Error al guardar mensaje: {e}")
+            raise e
+
+    def obtener_mensajes_grupo(self, grupo_id: str) -> list[Mensaje]:
+        try:
+            res = (
+                self.client.table("messages")
+                .select("*")
+                .eq("grupo_id", grupo_id)
+                .order("fecha_envio", desc=False)
+                .execute()
+            )
+            return [Mensaje.from_dict(m) for m in res.data]
+        except Exception as e:
+            print(f"[Supabase Error] Error al consultar chat: {e}")
+            return []
+
+    def eliminar_mensaje(self, id_mensaje: str) -> bool:
+        try:
+            res = (
+                self.client.table("messages")
+                .delete()
+                .eq("id_mensaje", id_mensaje)
+                .execute()
+            )
+            return len(res.data) > 0
+        except Exception as e:
+            print(f"[Supabase Error] Error al eliminar mensaje: {e}")
+            return False

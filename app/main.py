@@ -53,7 +53,7 @@ def main():
 
     # 5. arrancar con app Flet
     def startup(page: ft.Page):
-        page.title = "Leer Juntos"
+        page.title = "Time Turner"
 
         app_flet = AppFlet(controlador=controlador, servicio_auth=servicio_auth)
         app_flet.main(page)

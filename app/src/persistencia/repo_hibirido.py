@@ -1,8 +1,11 @@
 import json
 import os
 
+from dominio.models_grupo import Grupo
 from dominio.models_libro import Libro
-from dominio.models_sesion import SesionLectura
+from dominio.models_mensaje import Mensaje
+from dominio.models_miembro import MiembroGrupo
+from dominio.models_sesion import EstadoSesion, SesionLectura
 from dominio.models_usuario import Usuario
 
 from persistencia.repo_json import RepositorioJSON
@@ -235,6 +238,155 @@ class RepositorioHibrido(IRepositorioDatos):
                             break
             except Exception:  # noqa: BLE001, S112
                 continue
+
+        for id_ok in ids_exitosos:
+            self._desmarcar_pendiente(id_ok)
+
+        return {"exitosos": sincronizados, "pendientes": len(self.pendientes_sync)}
+
+    # --- Operaciones de Grupos y Miembros ---
+
+    def crear_grupo(self, grupo: Grupo) -> bool:
+        exito_local = self.local.crear_grupo(grupo)
+        if self.nube:
+            try:
+                self.nube.crear_grupo(grupo)
+                self._desmarcar_pendiente(grupo.id_grupo)
+                print(f"☁️ [Sync OK] Grupo '{grupo.nombre}' creado en Supabase.")
+            except Exception:
+                self._marcar_pendiente(grupo.id_grupo, "grupo")
+        else:
+            self._marcar_pendiente(grupo.id_grupo, "grupo")
+        return exito_local
+
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+        grupo = self.local.obtener_grupo_por_codigo(codigo_acceso)
+        if not grupo and self.nube:
+            try:
+                grupo = self.nube.obtener_grupo_por_codigo(codigo_acceso)
+                if grupo:
+                    self.local.crear_grupo(grupo)
+            except Exception as e:
+                print(f"error{e}")
+        return grupo
+
+    def obtener_grupos_usuario(self, id_usuario: str) -> list[Grupo]:
+        grupos = self.local.obtener_grupos_usuario(id_usuario)
+        if not grupos and self.nube:
+            try:
+                grupos = self.nube.obtener_grupos_usuario(id_usuario)
+                for g in grupos:
+                    self.local.crear_grupo(g)
+            except Exception as e:
+                print(f"error{e}")
+        return grupos
+
+    def agregar_miembro_grupo(self, miembro: MiembroGrupo) -> bool:
+        exito_local = self.local.agregar_miembro_grupo(miembro)
+        if self.nube:
+            try:
+                self.nube.agregar_miembro_grupo(miembro)
+                self._desmarcar_pendiente(f"{miembro.id_grupo}_{miembro.id_usuario}")
+            except Exception:
+                self._marcar_pendiente(
+                    f"{miembro.id_grupo}_{miembro.id_usuario}", "miembro"
+                )
+        else:
+            self._marcar_pendiente(
+                f"{miembro.id_grupo}_{miembro.id_usuario}", "miembro"
+            )
+        return exito_local
+
+    def obtener_miembros_grupo(self, id_grupo: str) -> list[str]:
+        miembros = self.local.obtener_miembros_grupo(id_grupo)
+        if not miembros and self.nube:
+            try:
+                miembros = self.nube.obtener_miembros_grupo(id_grupo)
+                for uid in miembros:
+                    self.local.agregar_miembro_grupo(MiembroGrupo(id_grupo, uid))
+            except Exception as e:
+                print(f"error{e}")
+        return miembros
+
+    # --- Operaciones de Chat Grupal ---
+
+    def guardar_mensaje(self, mensaje: Mensaje) -> bool:
+        exito_local = self.local.guardar_mensaje(mensaje)
+        if self.nube:
+            try:
+                self.nube.guardar_mensaje(mensaje)
+                self._desmarcar_pendiente(mensaje.id_mensaje)
+            except Exception:
+                self._marcar_pendiente(mensaje.id_mensaje, "mensaje")
+        else:
+            self._marcar_pendiente(mensaje.id_mensaje, "mensaje")
+        return exito_local
+
+    def obtener_mensajes_grupo(self, grupo_id: str) -> list[Mensaje]:
+        mensajes = self.local.obtener_mensajes_grupo(grupo_id)
+        if not mensajes and self.nube:
+            try:
+                mensajes = self.nube.obtener_mensajes_grupo(grupo_id)
+                for m in mensajes:
+                    self.local.guardar_mensaje(m)
+            except Exception as e:
+                print(f"error{e}")
+        return mensajes
+
+    def eliminar_mensaje(self, id_mensaje: str) -> bool:
+        exito_local = self.local.eliminar_mensaje(id_mensaje)
+        if self.nube:
+            try:
+                self.nube.eliminar_mensaje(id_mensaje)
+            except Exception as e:
+                print(f"error{e}")
+        return exito_local
+
+    # --- Proceso de Sincronización al recuperar conexión ---
+
+    def sincronizar_pendientes(self) -> dict[str, int]:
+        if not self.nube:
+            return {"exitosos": 0, "fallidos": len(self.pendientes_sync)}
+
+        sincronizados = 0
+        ids_exitosos = []
+
+        for id_obj, tipo in list(self.pendientes_sync.items()):
+            try:
+                if tipo == "grupo":
+                    grupos_raw = self.local._leer_archivo(self.local.ruta_grupos)
+                    for item in grupos_raw:
+                        if item.get("id_grupo") == id_obj:
+                            self.nube.crear_grupo(Grupo.from_dict(item))
+                            ids_exitosos.append(id_obj)
+                            sincronizados += 1
+                            break
+
+                elif tipo == "miembro":
+                    miembros_raw = self.local._leer_archivo(self.local.ruta_miembros)
+                    for item in miembros_raw:
+                        key = f"{item.get('id_grupo')}_{item.get('id_usuario')}"
+                        if key == id_obj:
+                            self.nube.agregar_miembro_grupo(
+                                MiembroGrupo.from_dict(item)
+                            )
+                            ids_exitosos.append(id_obj)
+                            sincronizados += 1
+                            break
+
+                elif tipo == "mensaje":
+                    mensajes_raw = self.local._leer_archivo(self.local.ruta_mensajes)
+                    for item in mensajes_raw:
+                        if item.get("id_mensaje") == id_obj:
+                            self.nube.guardar_mensaje(Mensaje.from_dict(item))
+                            ids_exitosos.append(id_obj)
+                            sincronizados += 1
+                            break
+
+                # ... (procesamiento previo para libro, sesión y usuario) ...
+
+            except Exception as e:
+                print(f"error{e}")
 
         for id_ok in ids_exitosos:
             self._desmarcar_pendiente(id_ok)

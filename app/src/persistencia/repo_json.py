@@ -2,7 +2,10 @@ import json
 import os
 from datetime import datetime
 
+from dominio.models_grupo import Grupo
 from dominio.models_libro import Libro
+from dominio.models_mensaje import Mensaje
+from dominio.models_miembro import MiembroGrupo
 from dominio.models_sesion import EstadoSesion, SesionLectura
 from dominio.models_usuario import Usuario
 
@@ -19,6 +22,9 @@ class RepositorioJSON(IRepositorioDatos):
         self.ruta_libros = os.path.join(self.ruta_base, "libros.json")
         self.ruta_sesiones = os.path.join(self.ruta_base, "sesiones.json")
         self.ruta_usuario = os.path.join(self.ruta_base, "usuario.json")
+        self.ruta_grupos = os.path.join(self.ruta_base, "grupos.json")
+        self.ruta_miembros = os.path.join(self.ruta_base, "miembros.json")
+        self.ruta_mensajes = os.path.join(self.ruta_base, "mensajes.json")
 
         # Asegura la existencia del directorio data/ y de los archivos base
         self._inicializar_almacenamiento()
@@ -28,13 +34,17 @@ class RepositorioJSON(IRepositorioDatos):
         if not os.path.exists(self.ruta_base):
             os.makedirs(self.ruta_base, exist_ok=True)
 
-        if not os.path.exists(self.ruta_libros):
-            with open(self.ruta_libros, "w", encoding="utf-8") as f:
-                json.dump([], f, indent=4)
-
-        if not os.path.exists(self.ruta_sesiones):
-            with open(self.ruta_sesiones, "w", encoding="utf-8") as f:
-                json.dump([], f, indent=4)
+        for ruta in [
+            self.ruta_libros,
+            self.ruta_sesiones,
+            self.ruta_usuario,
+            self.ruta_grupos,
+            self.ruta_miembros,
+            self.ruta_mensajes,
+        ]:
+            if not os.path.exists(ruta):
+                with open(ruta, "w", encoding="utf-8") as f:
+                    json.dump([], f, indent=4)
 
     # --- Métodos Auxiliares de Lectura/Escritura JSON ---
 
@@ -163,3 +173,64 @@ class RepositorioJSON(IRepositorioDatos):
             if u.get("apodo").lower() == apodo.lower():
                 return Usuario.from_dict(u)
         return None
+
+    # --- Gestión de Grupos y Miembros ---
+
+    def crear_grupo(self, grupo: Grupo) -> bool:
+        grupos = self._leer_archivo(self.ruta_grupos)
+        grupos.append(grupo.to_dict())
+        return self._escribir_archivo(self.ruta_grupos, grupos)
+
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+        grupos = self._leer_archivo(self.ruta_grupos)
+        for item in grupos:
+            if item.get("codigo_acceso") == codigo_acceso.upper():
+                return Grupo.from_dict(item)
+        return None
+
+    def obtener_grupos_usuario(self, id_usuario: str) -> list[Grupo]:
+        miembros = self._leer_archivo(self.ruta_miembros)
+        grupos_ids = [
+            m["id_grupo"] for m in miembros if m.get("id_usuario") == id_usuario
+        ]
+
+        grupos = self._leer_archivo(self.ruta_grupos)
+        return [Grupo.from_dict(g) for g in grupos if g.get("id_grupo") in grupos_ids]
+
+    def agregar_miembro_grupo(self, miembro: MiembroGrupo) -> bool:
+        miembros = self._leer_archivo(self.ruta_miembros)
+        # Evitar duplicados
+        for m in miembros:
+            if (
+                m.get("id_grupo") == miembro.id_grupo
+                and m.get("id_usuario") == miembro.id_usuario
+            ):
+                return True
+        miembros.append(miembro.to_dict())
+        return self._escribir_archivo(self.ruta_miembros, miembros)
+
+    def obtener_miembros_grupo(self, id_grupo: str) -> list[str]:
+        miembros = self._leer_archivo(self.ruta_miembros)
+        return [m["id_usuario"] for m in miembros if m.get("id_grupo") == id_grupo]
+
+    # --- Gestión de Chat Grupal ---
+
+    def guardar_mensaje(self, mensaje: Mensaje) -> bool:
+        mensajes = self._leer_archivo(self.ruta_mensajes)
+        mensajes.append(mensaje.to_dict())
+        return self._escribir_archivo(self.ruta_mensajes, mensajes)
+
+    def obtener_mensajes_grupo(self, grupo_id: str) -> list[Mensaje]:
+        mensajes_dict = self._leer_archivo(self.ruta_mensajes)
+        resultado = [
+            Mensaje.from_dict(m) for m in mensajes_dict if m.get("grupo_id") == grupo_id
+        ]
+        resultado.sort(key=lambda m: m.fecha_envio)
+        return resultado
+
+    def eliminar_mensaje(self, id_mensaje: str) -> bool:
+        mensajes_dict = self._leer_archivo(self.ruta_mensajes)
+        nuevos_mensajes = [
+            m for m in mensajes_dict if m.get("id_mensaje") != id_mensaje
+        ]
+        return self._escribir_archivo(self.ruta_mensajes, nuevos_mensajes)

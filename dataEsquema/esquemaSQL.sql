@@ -40,6 +40,46 @@ CREATE TABLE IF NOT EXISTS public.reading_sessions (
     fecha_registro TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 1. TABLA DE GRUPOS
+CREATE TABLE IF NOT EXISTS public.groups (
+    id_grupo UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre VARCHAR(150) NOT NULL,
+    codigo_acceso VARCHAR(6) UNIQUE NOT NULL,
+    admin_id UUID NOT NULL REFERENCES public.profiles(id_usuario) ON DELETE CASCADE,
+    fecha_creacion TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. TABLA DE MIEMBROS DE GRUPO
+CREATE TABLE IF NOT EXISTS public.group_members (
+    id_grupo UUID NOT NULL REFERENCES public.groups(id_grupo) ON DELETE CASCADE,
+    id_usuario UUID NOT NULL REFERENCES public.profiles(id_usuario) ON DELETE CASCADE,
+    fecha_union TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (id_grupo, id_usuario)
+);
+
+-- 3. TABLA DE MENSAJES Y STICKERS DEL CHAT
+CREATE TABLE IF NOT EXISTS public.messages (
+    id_mensaje UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    grupo_id UUID NOT NULL REFERENCES public.groups(id_grupo) ON DELETE CASCADE,
+    usuario_id UUID NOT NULL REFERENCES public.profiles(id_usuario) ON DELETE CASCADE,
+    informacion TEXT NOT NULL,
+    tipo VARCHAR(20) DEFAULT 'TEXTO', -- 'TEXTO', 'STICKER', 'ANIMO'
+    fecha_envio TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ========================================================
+-- POLÍTICAS DE SEGURIDAD (RLS) - LECTURA Y ESCRITURA CRUZADA
+-- ========================================================
+
+ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para Acceso Temporal / Desarrollo (Sprint 4)
+CREATE POLICY "Permite acceso a grupos" ON public.groups FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permite acceso a miembros" ON public.group_members FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Permite acceso a mensajes" ON public.messages FOR ALL USING (true) WITH CHECK (true);
+
 -- ========================================================
 -- POLÍTICAS DE SEGURIDAD A NIVEL DE FILA (ROW LEVEL SECURITY - RLS)
 -- ========================================================
