@@ -14,5 +14,13 @@
         "informacion": "⭐ ¡Sigue así, vas muy bien!",
         "tipo": "STICKER",
         "fecha_envio": "2026-11-26T17:16:52.205901+00:00"
+    },
+    {
+        "id_mensaje": "16b95fb2-7f1a-47bb-a770-887c134fcef1",
+        "grupo_id": "2503db04-06d3-4105-b71d-61a670885fdf",
+        "usuario_id": "a95d4e7d-888c-490a-952e-7a1dca087227",
+        "informacion": "📚 ¡Excelente elección de libro!",
+        "tipo": "STICKER",
+        "fecha_envio": "2026-11-27T15:20:41.941989+00:00"
     }
 ]

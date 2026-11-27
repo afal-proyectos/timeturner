@@ -18,19 +18,18 @@ import sys
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import flet as ft
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE, "src"))
 
-from dominio.controlador_lectura import ControladorLectura  # noqa: E402
-from dominio.models_sesion import EstadoSesion  # noqa: E402
-from persistencia.repo_json import RepositorioJSON  # noqa: E402
-
-from presentacion.ui_comun import BLANCO, boton  # noqa: E402
+from src.dominio.controlador_lectura import ControladorLectura  # noqa: E402
+from src.dominio.models_sesion import EstadoSesion  # noqa: E402
+from src.dominio.servicio_gestor_grupo import GestorGrupos
+from src.persistencia.repo_json import RepositorioJSON  # noqa: E402
+from src.presentacion.ui_comun import BLANCO, boton  # noqa: E402
 
 MAX_CARACTERES = 8
 
@@ -72,6 +71,12 @@ class GestorCuentaLocal:
     def _publico(u: dict) -> dict:
         return {k: u[k] for k in ("id_usuario", "email", "apodo", "rol")}
 
+    def apodo_por_id(self, id_usuario: str) -> str | None:
+        for u in self._leer():
+            if u["id_usuario"] == id_usuario:
+                return u["apodo"]
+        return None
+
     def crear(self, email: str, apodo: str, clave: str) -> dict:
         email, apodo = email.strip(), apodo.strip()
         if "@" not in email or "." not in email.split("@")[-1]:
@@ -99,13 +104,13 @@ class GestorCuentaLocal:
             "clave_hash": self._hash(clave, sal),
             "sal": sal,
             "rol": "lector",
-            "fecha_registro": datetime.now(timezone.utc).isoformat(),
+            "fecha_registro": datetime.now(UTC).isoformat(),
         }
         usuarios.append(usuario)
         self._guardar(usuarios)
         return self._publico(usuario)
 
-    def autenticar(self, apodo: str, clave: str) -> Optional[dict]:
+    def autenticar(self, apodo: str, clave: str) -> dict | None:
         for u in self._leer():
             if u["apodo"].lower() == apodo.strip().lower():
                 if hmac.compare_digest(u["clave_hash"], self._hash(clave, u["sal"])):
@@ -118,11 +123,18 @@ class GestorCuentaLocal:
 # Controlador de la IU
 # --------------------------------------------------------------------------
 class ControladorUI:
-    def __init__(self, page: ft.Page, controlador: ControladorLectura, cuentas):
+    def __init__(
+        self,
+        page: ft.Page,
+        controlador: ControladorLectura,
+        cuentas,
+        gestor_grupos: GestorGrupos,
+    ):
         self.page = page
         self.controlador = controlador
         self.repo = controlador.repo
         self.cuentas = cuentas
+        self.gestor_grupos = gestor_grupos  # GestorGrupos (dominio); None = sin grupos
 
         # Estado
         self.usuario: dict | None = None
@@ -145,9 +157,9 @@ class ControladorUI:
         page.padding = 0
         page.theme_mode = ft.ThemeMode.LIGHT
         try:
-            page.window.width, page.window.height = 440, 820
+            page.window.width, page.window.height = 440, 620
         except AttributeError:  # Flet < 0.27
-            page.window_width, page.window_height = 440, 820
+            page.window_width, page.window_height = 440, 620
 
         self.contenedor = ft.Container(expand=True, padding=16)
         self.btn_stats = boton(
@@ -224,8 +236,8 @@ class ControladorUI:
         if hasattr(self.page, "pop_dialog"):  # Flet 1.x
             try:
                 self.page.pop_dialog()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"No se a cerrado el dialogo{e}")
         else:
             dialogo.open = False
             self.page.update()
@@ -239,11 +251,12 @@ class ControladorUI:
         self.navegar("01_inicio")
 
     # ---------------- Datos de biblioteca ----------------
-    def resumen_libros(self) -> list[dict]:
-        """Libros del usuario ordenados del último leído al más antiguo."""
-        minimo = datetime.min.replace(tzinfo=timezone.utc)
+    def resumen_libros(self, usuario_id: str | None = None) -> list[dict]:
+        """Libros de un usuario (por defecto el actual), del último leído al más antiguo."""
+        usuario_id = usuario_id or self.usuario["id_usuario"]
+        minimo = datetime.min.replace(tzinfo=UTC)
         resumen = []
-        for libro in self.controlador.obtener_biblioteca(self.usuario["id_usuario"]):
+        for libro in self.controlador.obtener_biblioteca(usuario_id):
             sesiones = self.repo.obtener_sesiones(libro.id_libro)
             marcas = [s.fin_utc or s.inicio_utc for s in sesiones]
             marcas = [m for m in marcas if m]
@@ -281,6 +294,28 @@ class ControladorUI:
         return max(
             (s.pagina_fin for s in sesiones if s.pagina_fin is not None), default=0
         )
+
+    # ---------------- Grupos ----------------
+    def apodo_de(self, id_usuario: str) -> str:
+        if self.usuario and id_usuario == self.usuario["id_usuario"]:
+            return self.usuario["apodo"]
+        return self.cuentas.apodo_por_id(id_usuario) or id_usuario[:8]
+
+    def miembros_grupo(self, grupo) -> list[dict]:
+        """Miembros del grupo como [{'id_usuario', 'apodo'}], ordenados por apodo."""
+        repo_g = self.gestor_grupos.repo
+        ids: list[str] = []
+        try:
+            for m in repo_g.obtener_miembros(grupo.id_grupo):
+                ids.append(getattr(m, "id_usuario", None) or m["id_usuario"])
+        except (AttributeError, TypeError, KeyError):
+            # Plan B: deducir los miembros desde el tablero del gestor.
+            ids = [
+                i["usuario_id"]
+                for i in self.gestor_grupos.obtener_tablero_cruzado(grupo.id_grupo)
+            ]
+        miembros = [{"id_usuario": i, "apodo": self.apodo_de(i)} for i in ids]
+        return sorted(miembros, key=lambda m: m["apodo"].lower())
 
     # ---------------- Sesión de lectura / cronómetro ----------------
     @property
@@ -326,7 +361,7 @@ class ControladorUI:
         s = self.sesion
         if not s or not s.inicio_utc:
             return 0.0
-        ahora = datetime.now(timezone.utc)
+        ahora = datetime.now(UTC)
         pausa = s.minutos_pausa * 60.0
         if s.estado == EstadoSesion.PAUSADA and s._inicio_pausa_temp:
             pausa += (ahora - s._inicio_pausa_temp).total_seconds()
@@ -355,7 +390,8 @@ def main(page: ft.Page) -> None:
     repositorio = RepositorioJSON(ruta_base=ruta_datos)
     controlador = ControladorLectura(repositorio=repositorio)
     cuentas = GestorCuentaLocal(os.path.join(ruta_datos, "usuarios.json"))
-    ControladorUI(page, controlador, cuentas).iniciar()
+    gestor_grupos = GestorGrupos(repositorio=repositorio)
+    ControladorUI(page, controlador, cuentas, gestor_grupos).iniciar()
 
 
 if __name__ == "__main__":

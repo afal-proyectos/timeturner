@@ -5,5 +5,12 @@
         "codigo_acceso": "N8D3D8",
         "admin_id": "7d7f83a8-b49b-4967-b1f1-337bf2eefdb6",
         "fecha_creacion": "2026-11-26T17:16:25.950737+00:00"
+    },
+    {
+        "id_grupo": "2503db04-06d3-4105-b71d-61a670885fdf",
+        "nombre": "Amigos",
+        "codigo_acceso": "8Q68LS",
+        "admin_id": "a95d4e7d-888c-490a-952e-7a1dca087227",
+        "fecha_creacion": "2026-11-27T15:20:31.172644+00:00"
     }
 ]

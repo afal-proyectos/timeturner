@@ -60,7 +60,7 @@ def texto(valor: str, tam: int = 14, negrita: bool = False, centrado: bool = Fal
 def tarjeta(contenido, ancho=None, alto=None, on_click=None, expand=False):
     return ft.Container(
         content=contenido,
-        bgcolor=GRIS_CLARO,
+        bgcolor="#F2F2F2",  # "#0B0B36",
         border_radius=12,
         padding=14,
         width=ancho,

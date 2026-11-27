@@ -75,12 +75,24 @@ def construir(ui) -> ft.Control:
 
     return ft.Column(
         [
-            texto(f"Hola {ui.usuario['apodo']}", 26, negrita=True),
+            texto(f"Hola {ui.usuario['apodo']}", 26, negrita=True, centrado=True),
             tarjeta_libro,
-            boton(
-                "Biblioteca",
-                lambda e: ui.abrir_dialogo("12_lista_biblioteca"),
-                icono=ft.Icons.MENU_BOOK,
+            ft.Row(
+                [
+                    boton(
+                        "Biblioteca",
+                        lambda e: ui.abrir_dialogo("12_lista_biblioteca"),
+                        icono=ft.Icons.MENU_BOOK,
+                        expand=True,
+                    ),
+                    boton(
+                        "Grupos",
+                        lambda e: ui.navegar("05_ver_grupos"),
+                        icono=ft.Icons.GROUP,
+                        expand=True,
+                    ),
+                ],
+                spacing=8,
             ),
             ft.Container(height=30),
             ft.Row([reloj], alignment=ft.MainAxisAlignment.CENTER),

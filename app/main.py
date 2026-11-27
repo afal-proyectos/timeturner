@@ -8,14 +8,13 @@ load_dotenv()
 # Añadir directorio 'src' al path de Python
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
-
+from app_flet import ControladorUI
 from src.dominio.controlador_lectura import ControladorLectura
 from src.dominio.servicio_autenticacion import ServicioAutenticacion
 from src.dominio.servicio_gestor_grupo import GestorGrupos
 from src.persistencia.repo_hibirido import RepositorioHibrido
 from src.persistencia.repo_json import RepositorioJSON
 from src.persistencia.repo_supabase import RepositorioSupabase
-from src.presentacion.app_flet import ControladorUI
 
 
 def main():
