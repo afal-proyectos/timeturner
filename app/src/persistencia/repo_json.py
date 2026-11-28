@@ -21,7 +21,7 @@ class RepositorioJSON(IRepositorioDatos):
         self.ruta_base = ruta_base
         self.ruta_libros = os.path.join(self.ruta_base, "libros.json")
         self.ruta_sesiones = os.path.join(self.ruta_base, "sesiones.json")
-        self.ruta_usuario = os.path.join(self.ruta_base, "usuario.json")
+        self.ruta_usuario = os.path.join(self.ruta_base, "usuarios.json")
         self.ruta_grupos = os.path.join(self.ruta_base, "grupos.json")
         self.ruta_miembros = os.path.join(self.ruta_base, "miembros.json")
         self.ruta_mensajes = os.path.join(self.ruta_base, "mensajes.json")
@@ -90,7 +90,7 @@ class RepositorioJSON(IRepositorioDatos):
             if item.get("usuario_id") == usuario_id
         ]
 
-    def obtener_libro_por_id(self, id_libro: str) -> list[Libro | None]:
+    def obtener_libro_por_id(self, id_libro: str) -> Libro | None:
         libros_dict = self._leer_archivo(self.ruta_libros)
         for item in libros_dict:
             if item.get("id_libro") == id_libro:
@@ -167,10 +167,16 @@ class RepositorioJSON(IRepositorioDatos):
             usuarios.append(usuario.to_dict())
         return self._escribir_archivo(self.ruta_usuario, usuarios)
 
-    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+    def obtener_usuario_por_apodo(self, apodo: str) -> Usuario | None:
         usuarios = self._leer_archivo(self.ruta_usuario)
         for u in usuarios:
             if u.get("apodo").lower() == apodo.lower():
+                return Usuario.from_dict(u)
+        return None
+
+    def obtener_usuario_por_id(self, id_usuario: str) -> Usuario | None:
+        for u in self._leer_archivo(self.ruta_usuario):
+            if u.get("id_usuario") == id_usuario:
                 return Usuario.from_dict(u)
         return None
 
@@ -181,7 +187,7 @@ class RepositorioJSON(IRepositorioDatos):
         grupos.append(grupo.to_dict())
         return self._escribir_archivo(self.ruta_grupos, grupos)
 
-    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> Grupo | None:
         grupos = self._leer_archivo(self.ruta_grupos)
         for item in grupos:
             if item.get("codigo_acceso") == codigo_acceso.upper():

@@ -25,7 +25,7 @@ class IRepositorioDatos(ABC):
         """Obtiene la lista de libros registrados por un usuario específico."""
 
     @abstractmethod
-    def obtener_libro_por_id(self, id_libro: str) -> list[Libro | None]:
+    def obtener_libro_por_id(self, id_libro: str) -> Libro | None:
         """Busca y retorna un libro por su ID único (UUID)."""
 
     # --- Gestión de Sesiones de Lectura ---
@@ -45,8 +45,12 @@ class IRepositorioDatos(ABC):
         pass
 
     @abstractmethod
-    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+    def obtener_usuario_por_apodo(self, apodo: str) -> Usuario | None:
         pass
+
+    @abstractmethod
+    def obtener_usuario_por_id(self, id_usuario: str) -> Usuario | None:
+        """Busca un usuario por su id (UUID)."""
 
     # --- Gestión de Grupos y Miembros ---
 
@@ -55,7 +59,7 @@ class IRepositorioDatos(ABC):
         pass
 
     @abstractmethod
-    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> Grupo | None:
         pass
 
     @abstractmethod

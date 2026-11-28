@@ -58,7 +58,7 @@ class GestorGrupos:
         tablero: list[dict[str, object]] = []
 
         for uid in miembros_ids:
-            usuario = self.repo.obtener_usuario_por_apodo("")
+            usuario = self.repo.obtener_usuario_por_id(uid)
             libros = self.repo.obtener_libros(uid)
             total_libros = len(libros)
             total_horas = 0.0
@@ -88,6 +88,7 @@ class GestorGrupos:
             tablero.append(
                 {
                     "usuario_id": uid,
+                    "apodo": usuario.apodo if usuario else uid[:8],
                     "total_libros": total_libros,
                     "total_horas_leidas": round(total_horas, 2),
                     "lecturas_activas": lecturas_activas,

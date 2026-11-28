@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dominio.models_grupo import Grupo
 from dominio.models_libro import Libro
 from dominio.models_mensaje import Mensaje
@@ -41,7 +43,7 @@ class RepositorioSupabase(IRepositorioDatos):
             print(f"[Supabase Error] Error al consultar libros de {usuario_id}: {e}")
             return []
 
-    def obtener_libro_por_id(self, id_libro: str) -> list[Libro | None]:
+    def obtener_libro_por_id(self, id_libro: str) -> Libro | None:
         """Consulta un libro específico por su UUID."""
         try:
             response = (
@@ -79,7 +81,7 @@ class RepositorioSupabase(IRepositorioDatos):
             print(f"[Supabase Error] Error al registrar sesión {sesion.id_sesion}: {e}")
             raise e
 
-    def obtener_sesiones(self, libro_id: str) -> list[SesionLectura | None]:
+    def obtener_sesiones(self, libro_id: str) -> list[SesionLectura]:
         """Recupera el historial de sesiones de un libro desde la nube."""
         try:
             response = (
@@ -99,6 +101,10 @@ class RepositorioSupabase(IRepositorioDatos):
                 sesion.pagina_fin = item.get("pagina_fin")
                 sesion.minutos_pausa = item.get("minutos_pausa", 0.0)
                 sesion.estado = EstadoSesion(item.get("estado", "INACTIVA"))
+                if item.get("inicio_utc"):
+                    sesion.inicio_utc = datetime.fromisoformat(item["inicio_utc"])
+                if item.get("fin_utc"):
+                    sesion.fin_utc = datetime.fromisoformat(item["fin_utc"])
                 sesiones.append(sesion)
             return sesiones
         except Exception as e:
@@ -121,12 +127,27 @@ class RepositorioSupabase(IRepositorioDatos):
             print(f"[Supabase Error] No se pudo guardar el usuario: {e}")
             raise e
 
-    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+    def obtener_usuario_por_apodo(self, apodo: str) -> Usuario | None:
         try:
             res = (
                 self.client.table("profiles")
                 .select("*")
                 .eq("apodo", apodo)
+                .single()
+                .execute()
+            )
+            if res.data:
+                return Usuario.from_dict(res.data)
+            return None
+        except Exception:
+            return None
+
+    def obtener_usuario_por_id(self, id_usuario: str) -> Usuario | None:
+        try:
+            res = (
+                self.client.table("profiles")
+                .select("*")
+                .eq("id_usuario", id_usuario)
                 .single()
                 .execute()
             )
@@ -146,7 +167,7 @@ class RepositorioSupabase(IRepositorioDatos):
             print(f"[Supabase Error] Error al crear grupo '{grupo.nombre}': {e}")
             raise e
 
-    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> Grupo | None:
         try:
             res = (
                 self.client.table("groups")

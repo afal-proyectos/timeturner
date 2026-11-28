@@ -9,9 +9,11 @@ def crear_dialogo(ui, mensaje: str = "") -> ft.AlertDialog:
     error = ft.Text("", color=ROJO, size=12)
 
     def ingresar(e) -> None:
-        usuario = ui.cuentas.autenticar(apodo.value or "", clave.value or "")
-        if usuario is None:
-            error.value = "Apodo o contraseña incorrectos."
+        exito, mensaje, usuario = ui.servicio_auth.iniciar_sesion(
+            apodo.value or "", clave.value or ""
+        )
+        if not exito:
+            error.value = mensaje
             ui.page.update()
             return
         ui.iniciar_sesion_usuario(usuario)

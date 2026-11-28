@@ -174,5 +174,27 @@
         "fin_utc": "2026-11-27T01:52:18.668613+00:00",
         "minutos_pausa": 0.12867206666666667,
         "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "d573be5d-f7f3-48af-902e-9e5e65f7b66e",
+        "libro_id": "b9e4ac30-0a6d-495d-9ead-3b0bb5086ac6",
+        "usuario_id": "d2358807-38cd-4f19-aaef-4b6481186c6a",
+        "pagina_inicio": 2,
+        "pagina_fin": 30,
+        "inicio_utc": "2026-11-28T03:02:17.354915+00:00",
+        "fin_utc": "2026-11-28T03:02:59.070272+00:00",
+        "minutos_pausa": 0.15615961666666667,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "e0110966-e469-4b9d-b546-03abac9d206d",
+        "libro_id": "b9e4ac30-0a6d-495d-9ead-3b0bb5086ac6",
+        "usuario_id": "d2358807-38cd-4f19-aaef-4b6481186c6a",
+        "pagina_inicio": 30,
+        "pagina_fin": 50,
+        "inicio_utc": "2026-11-28T03:04:11.053718+00:00",
+        "fin_utc": "2026-11-28T03:04:59.919484+00:00",
+        "minutos_pausa": 0.07913195,
+        "estado": "GUARDADA"
     }
 ]

@@ -23,7 +23,7 @@ class RepositorioHibrido(IRepositorioDatos):
     def __init__(
         self,
         repo_local: RepositorioJSON,
-        repo_nube: list[RepositorioSupabase | None] | None = None,
+        repo_nube: RepositorioSupabase | None = None,
     ):
         self.local = repo_local
         self.nube = repo_nube
@@ -103,7 +103,7 @@ class RepositorioHibrido(IRepositorioDatos):
 
         return libros_locales
 
-    def obtener_libro_por_id(self, id_libro: str) -> list[Libro | None]:
+    def obtener_libro_por_id(self, id_libro: str) -> Libro | None:
         libro = self.local.obtener_libro_por_id(id_libro)
         if not libro and self.nube:
             try:
@@ -176,7 +176,7 @@ class RepositorioHibrido(IRepositorioDatos):
 
         return exito_local
 
-    def obtener_usuario_por_apodo(self, apodo: str) -> list[Usuario | None]:
+    def obtener_usuario_por_apodo(self, apodo: str) -> Usuario | None:
         """Busca el usuario en el almacenamiento local; si no existe, lo busca en la nube."""
         # 1. Buscar primero en local para máxima velocidad
         usuario = self.local.obtener_usuario_por_apodo(apodo)
@@ -193,56 +193,16 @@ class RepositorioHibrido(IRepositorioDatos):
 
         return usuario
 
-    # --- Proceso de Sincronización al recuperar conexión ---
-
-    def sincronizar_pendientes(self) -> dict[str, int]:
-        """
-        Recorre todos los registros pendientes y los envía a Supabase.
-        Retorna un resumen con el conteo de elementos sincronizados.
-        """
-        if not self.nube:
-            return {"exitosos": 0, "fallidos": len(self.pendientes_sync)}
-
-        sincronizados = 0
-        ids_exitosos = []
-
-        for id_obj, tipo in list(self.pendientes_sync.items()):
+    def obtener_usuario_por_id(self, id_usuario: str) -> Usuario | None:
+        usuario = self.local.obtener_usuario_por_id(id_usuario)
+        if not usuario and self.nube:
             try:
-                if tipo == "libro":
-                    libro = self.local.obtener_libro_por_id(id_obj)
-                    if libro:
-                        self.nube.guardar_libro(libro)
-                        sincronizados += 1
-                        ids_exitosos.append(id_obj)
-                elif tipo == "sesion":
-                    # Leer directamente las sesiones locales
-                    sesiones_raw = self.local._leer_archivo(self.ruta_sesiones)
-                    for item in sesiones_raw:
-                        if item.get("id_sesion") == id_obj:
-                            # Reconstruir entidad SesionLectura y subir
-                            sesion = self.local.obtener_sesiones(item["libro_id"])
-                            for s in sesion:
-                                if s.id_sesion == id_obj:
-                                    self.nube.registrar_sesion(s)
-                                    sincronizados += 1
-                                    ids_exitosos.append(id_obj)
-                                    break
-                elif tipo == "usuario":
-                    usuarios_raw = self.local._leer_archivo(self.local.ruta_usuario)
-                    for item in usuarios_raw:
-                        if item.get("id_usuario") == id_obj:
-                            u = Usuario.from_dict(item)
-                            self.nube.guardar_usuario(u)
-                            ids_exitosos.append(id_obj)
-                            sincronizados += 1
-                            break
-            except Exception:  # noqa: BLE001, S112
-                continue
-
-        for id_ok in ids_exitosos:
-            self._desmarcar_pendiente(id_ok)
-
-        return {"exitosos": sincronizados, "pendientes": len(self.pendientes_sync)}
+                usuario = self.nube.obtener_usuario_por_id(id_usuario)
+                if usuario:
+                    self.local.guardar_usuario(usuario)
+            except Exception as e:
+                print(f"No se ha encontrado el usuario: {e}")
+        return usuario
 
     # --- Operaciones de Grupos y Miembros ---
 
@@ -259,7 +219,7 @@ class RepositorioHibrido(IRepositorioDatos):
             self._marcar_pendiente(grupo.id_grupo, "grupo")
         return exito_local
 
-    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> list[Grupo | None]:
+    def obtener_grupo_por_codigo(self, codigo_acceso: str) -> Grupo | None:
         grupo = self.local.obtener_grupo_por_codigo(codigo_acceso)
         if not grupo and self.nube:
             try:
@@ -353,7 +313,35 @@ class RepositorioHibrido(IRepositorioDatos):
 
         for id_obj, tipo in list(self.pendientes_sync.items()):
             try:
-                if tipo == "grupo":
+                if tipo == "libro":
+                    libro = self.local.obtener_libro_por_id(id_obj)
+                    if libro:
+                        self.nube.guardar_libro(libro)
+                        ids_exitosos.append(id_obj)
+                        sincronizados += 1
+
+                elif tipo == "sesion":
+                    sesiones_raw = self.local._leer_archivo(self.local.ruta_sesiones)
+                    for item in sesiones_raw:
+                        if item.get("id_sesion") == id_obj:
+                            for s in self.local.obtener_sesiones(item["libro_id"]):
+                                if s.id_sesion == id_obj:
+                                    self.nube.registrar_sesion(s)
+                                    ids_exitosos.append(id_obj)
+                                    sincronizados += 1
+                                    break
+                            break
+
+                elif tipo == "usuario":
+                    usuarios_raw = self.local._leer_archivo(self.local.ruta_usuario)
+                    for item in usuarios_raw:
+                        if item.get("id_usuario") == id_obj:
+                            self.nube.guardar_usuario(Usuario.from_dict(item))
+                            ids_exitosos.append(id_obj)
+                            sincronizados += 1
+                            break
+
+                elif tipo == "grupo":
                     grupos_raw = self.local._leer_archivo(self.local.ruta_grupos)
                     for item in grupos_raw:
                         if item.get("id_grupo") == id_obj:
@@ -382,8 +370,6 @@ class RepositorioHibrido(IRepositorioDatos):
                             ids_exitosos.append(id_obj)
                             sincronizados += 1
                             break
-
-                # ... (procesamiento previo para libro, sesión y usuario) ...
 
             except Exception as e:
                 print(f"error{e}")

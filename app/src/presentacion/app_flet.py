@@ -1,122 +1,23 @@
 """
-LeerJuntos - Controlador de la IU (Flet).
-
-Ejecutar desde la carpeta app/:   python app_flet.py
-
 Responsabilidades:
   * Montar el layout (contenido + barra inferior permanente).
   * Navegar entre vistas estáticas (01-04) y abrir diálogos flotantes (10-13).
   * Mantener el estado de la UI: usuario, libro activo y sesión de lectura en curso.
 """
 
-import hashlib
-import hmac
 import importlib
-import json
-import os
-import sys
 import threading
 import time
-import uuid
 from datetime import UTC, datetime
 
 import flet as ft
+from dominio.controlador_lectura import ControladorLectura  # noqa: E402
+from dominio.models_sesion import EstadoSesion  # noqa: E402
+from dominio.servicio_gestor_grupo import GestorGrupos
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(BASE, "src"))
-
-from src.dominio.controlador_lectura import ControladorLectura  # noqa: E402
-from src.dominio.models_sesion import EstadoSesion  # noqa: E402
-from src.dominio.servicio_gestor_grupo import GestorGrupos
-from src.persistencia.repo_json import RepositorioJSON  # noqa: E402
-from src.presentacion.ui_comun import BLANCO, boton  # noqa: E402
+from presentacion.ui_comun import BLANCO, boton  # noqa: E402
 
 MAX_CARACTERES = 8
-
-
-# --------------------------------------------------------------------------
-# Cuentas (provisional: almacenamiento local en data/usuarios.json)
-# --------------------------------------------------------------------------
-class GestorCuentaLocal:
-    """
-    Cuentas de usuario en JSON local. La contraseña se guarda con hash (PBKDF2).
-    Provisional: IRepositorioDatos aún no tiene crear_usuario/obtener_usuario,
-    cuando existan, esta clase se reemplaza por GestorCuentaUsuario.
-    """
-
-    def __init__(self, ruta: str):
-        self.ruta = ruta
-        os.makedirs(os.path.dirname(ruta), exist_ok=True)
-        if not os.path.exists(ruta):
-            self._guardar([])
-
-    def _leer(self) -> list:
-        try:
-            with open(self.ruta, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-
-    def _guardar(self, usuarios: list) -> None:
-        with open(self.ruta, "w", encoding="utf-8") as f:
-            json.dump(usuarios, f, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def _hash(clave: str, sal_hex: str) -> str:
-        return hashlib.pbkdf2_hmac(
-            "sha256", clave.encode("utf-8"), bytes.fromhex(sal_hex), 100_000
-        ).hex()
-
-    @staticmethod
-    def _publico(u: dict) -> dict:
-        return {k: u[k] for k in ("id_usuario", "email", "apodo", "rol")}
-
-    def apodo_por_id(self, id_usuario: str) -> str | None:
-        for u in self._leer():
-            if u["id_usuario"] == id_usuario:
-                return u["apodo"]
-        return None
-
-    def crear(self, email: str, apodo: str, clave: str) -> dict:
-        email, apodo = email.strip(), apodo.strip()
-        if "@" not in email or "." not in email.split("@")[-1]:
-            raise ValueError("Correo no válido.")
-        if not 1 <= len(apodo) <= MAX_CARACTERES:
-            raise ValueError(
-                f"El apodo debe tener entre 1 y {MAX_CARACTERES} caracteres."
-            )
-        if not 1 <= len(clave) <= MAX_CARACTERES:
-            raise ValueError(
-                f"La contraseña debe tener entre 1 y {MAX_CARACTERES} caracteres."
-            )
-
-        usuarios = self._leer()
-        if any(u["apodo"].lower() == apodo.lower() for u in usuarios):
-            raise ValueError("Ese apodo ya está en uso.")
-        if any(u["email"].lower() == email.lower() for u in usuarios):
-            raise ValueError("Ese correo ya está registrado.")
-
-        sal = os.urandom(16).hex()
-        usuario = {
-            "id_usuario": str(uuid.uuid4()),
-            "email": email,
-            "apodo": apodo,
-            "clave_hash": self._hash(clave, sal),
-            "sal": sal,
-            "rol": "lector",
-            "fecha_registro": datetime.now(UTC).isoformat(),
-        }
-        usuarios.append(usuario)
-        self._guardar(usuarios)
-        return self._publico(usuario)
-
-    def autenticar(self, apodo: str, clave: str) -> dict | None:
-        for u in self._leer():
-            if u["apodo"].lower() == apodo.strip().lower():
-                if hmac.compare_digest(u["clave_hash"], self._hash(clave, u["sal"])):
-                    return self._publico(u)
-                return None
-        return None
 
 
 # --------------------------------------------------------------------------
@@ -125,15 +26,14 @@ class GestorCuentaLocal:
 class ControladorUI:
     def __init__(
         self,
-        page: ft.Page,
         controlador: ControladorLectura,
-        cuentas,
+        servicio_auth,
         gestor_grupos: GestorGrupos,
     ):
-        self.page = page
+
         self.controlador = controlador
         self.repo = controlador.repo
-        self.cuentas = cuentas
+        self.servicio_auth = servicio_auth
         self.gestor_grupos = gestor_grupos  # GestorGrupos (dominio); None = sin grupos
 
         # Estado
@@ -150,6 +50,10 @@ class ControladorUI:
         self._dialogo = None
 
     # ---------------- Arranque y layout ----------------
+    def main(self, page):
+        self.page = page
+        self.iniciar()
+
     def iniciar(self) -> None:
         page = self.page
         page.title = "LeerJuntos"
@@ -243,8 +147,13 @@ class ControladorUI:
             self.page.update()
 
     # ---------------- Usuario ----------------
-    def iniciar_sesion_usuario(self, usuario: dict) -> None:
-        self.usuario = usuario
+    def iniciar_sesion_usuario(self, usuario) -> None:
+        """Recibe la entidad Usuario; la UI guarda solo lo necesario (sin la clave)."""
+        self.usuario = {
+            "id_usuario": usuario.id_usuario,
+            "apodo": usuario.apodo,
+            "email": usuario.email,
+        }
         self.libro_activo = self._libro_por_defecto()
         self.cerrar_dialogo()
         self._actualizar_barra()
@@ -299,21 +208,12 @@ class ControladorUI:
     def apodo_de(self, id_usuario: str) -> str:
         if self.usuario and id_usuario == self.usuario["id_usuario"]:
             return self.usuario["apodo"]
-        return self.cuentas.apodo_por_id(id_usuario) or id_usuario[:8]
+        usuario = self.repo.obtener_usuario_por_id(id_usuario)
+        return usuario.apodo if usuario else id_usuario[:8]
 
     def miembros_grupo(self, grupo) -> list[dict]:
         """Miembros del grupo como [{'id_usuario', 'apodo'}], ordenados por apodo."""
-        repo_g = self.gestor_grupos.repo
-        ids: list[str] = []
-        try:
-            for m in repo_g.obtener_miembros(grupo.id_grupo):
-                ids.append(getattr(m, "id_usuario", None) or m["id_usuario"])
-        except (AttributeError, TypeError, KeyError):
-            # Plan B: deducir los miembros desde el tablero del gestor.
-            ids = [
-                i["usuario_id"]
-                for i in self.gestor_grupos.obtener_tablero_cruzado(grupo.id_grupo)
-            ]
+        ids = self.gestor_grupos.repo.obtener_miembros_grupo(grupo.id_grupo)
         miembros = [{"id_usuario": i, "apodo": self.apodo_de(i)} for i in ids]
         return sorted(miembros, key=lambda m: m["apodo"].lower())
 
@@ -382,20 +282,3 @@ class ControladorUI:
                 except Exception:
                     self.tick_cb = None  # el control ya no está en pantalla
             time.sleep(0.5)
-
-
-# --------------------------------------------------------------------------
-def main(page: ft.Page) -> None:
-    ruta_datos = os.path.join(BASE, "data")
-    repositorio = RepositorioJSON(ruta_base=ruta_datos)
-    controlador = ControladorLectura(repositorio=repositorio)
-    cuentas = GestorCuentaLocal(os.path.join(ruta_datos, "usuarios.json"))
-    gestor_grupos = GestorGrupos(repositorio=repositorio)
-    ControladorUI(page, controlador, cuentas, gestor_grupos).iniciar()
-
-
-if __name__ == "__main__":
-    if hasattr(ft, "run"):  # Flet 1.x
-        ft.run(main)
-    else:
-        ft.app(target=main)

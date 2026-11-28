@@ -12,7 +12,7 @@ class ServicioAutenticacion:
 
     def registrar_usuario(
         self, email: str, apodo: str, contrasena: str
-    ) -> tuple[bool, str, list[Usuario | None]]:
+    ) -> tuple[bool, str, Usuario | None]:
         # 1. Validación de Alias (Máximo 8 caracteres)
         apodo = apodo.strip()
         if not apodo or len(apodo) > 8:
@@ -40,7 +40,7 @@ class ServicioAutenticacion:
 
     def iniciar_sesion(
         self, apodo: str, contrasena: str
-    ) -> tuple[bool, str, list[Usuario | None]]:
+    ) -> tuple[bool, str, Usuario | None]:
         apodo = apodo.strip()
         if len(apodo) > 8:
             return False, "El alias no puede superar los 8 caracteres.", None

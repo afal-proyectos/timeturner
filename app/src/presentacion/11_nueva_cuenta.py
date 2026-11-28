@@ -11,7 +11,7 @@ def crear_dialogo(ui) -> ft.AlertDialog:
     )
     apodo = ft.TextField(label="Apodo (máx. 8)", max_length=8, color=NEGRO)
     clave = ft.TextField(
-        label="Contraseña (máx. 8)",
+        label="Contraseña (4 a 8)",
         password=True,
         can_reveal_password=True,
         max_length=8,
@@ -23,10 +23,11 @@ def crear_dialogo(ui) -> ft.AlertDialog:
         ui.abrir_dialogo("10_cuenta")
 
     def guardar(e) -> None:
-        try:
-            ui.cuentas.crear(correo.value or "", apodo.value or "", clave.value or "")
-        except ValueError as ex:
-            error.value = str(ex)
+        exito, mensaje, _usuario = ui.servicio_auth.registrar_usuario(
+            correo.value or "", apodo.value or "", clave.value or ""
+        )
+        if not exito:
+            error.value = mensaje
             ui.page.update()
             return
         ui.abrir_dialogo(

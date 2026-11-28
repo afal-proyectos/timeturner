@@ -6,21 +6,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # Añadir directorio 'src' al path de Python
-sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+BASE = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE, "src"))
 
-from app_flet import ControladorUI
-from src.dominio.controlador_lectura import ControladorLectura
-from src.dominio.servicio_autenticacion import ServicioAutenticacion
-from src.dominio.servicio_gestor_grupo import GestorGrupos
-from src.persistencia.repo_hibirido import RepositorioHibrido
-from src.persistencia.repo_json import RepositorioJSON
-from src.persistencia.repo_supabase import RepositorioSupabase
+from dominio.controlador_lectura import ControladorLectura
+from dominio.servicio_autenticacion import ServicioAutenticacion
+from dominio.servicio_gestor_grupo import GestorGrupos
+from persistencia.repo_hibirido import RepositorioHibrido
+from persistencia.repo_json import RepositorioJSON
+from persistencia.repo_supabase import RepositorioSupabase
+from presentacion.app_flet import ControladorUI
 
 
 def main():
     print("Iniciando LeerJuntos Flet UI...")
     # 1. Instanciar Repositorio JSON (crea data/libros.json y data/sesiones.json si no existen)
-    repo_local = RepositorioJSON(ruta_base="data")
+    repo_local = RepositorioJSON(ruta_base=os.path.join(BASE, "data"))
 
     # 2. Repositorio en la Nube
     SUPABASE_URL = os.getenv("SUPABASE_URL", "")
