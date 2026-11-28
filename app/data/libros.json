@@ -115,5 +115,32 @@
         "genero": "Clásico",
         "total_paginas": 500,
         "portada_url": ""
+    },
+    {
+        "id_libro": "876b9338-3f66-4713-b951-c4b9aead3907",
+        "usuario_id": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "titulo": "X Men Dios Ama el hombre Mata",
+        "autor": "C. Claremont",
+        "genero": "Cómics Marvel",
+        "total_paginas": 65,
+        "portada_url": ""
+    },
+    {
+        "id_libro": "c976e113-8cac-4e4a-8fc9-5a754c734187",
+        "usuario_id": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "titulo": "X Men Dios Ama el hombre Mata",
+        "autor": "C. Claremont",
+        "genero": "Cómics Marvel",
+        "total_paginas": 65,
+        "portada_url": ""
+    },
+    {
+        "id_libro": "682b6d54-d4d6-47e1-901f-31fdb4bd5794",
+        "usuario_id": "6812aa17-c524-4ec9-848c-6bcfb1861f76",
+        "titulo": "La Casa de los espiritus",
+        "autor": "Isabel Allende",
+        "genero": "Realismo Mágico",
+        "total_paginas": 650,
+        "portada_url": ""
     }
 ]

@@ -196,5 +196,60 @@
         "fin_utc": "2026-11-28T03:04:59.919484+00:00",
         "minutos_pausa": 0.07913195,
         "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "ff15f376-a396-4f54-b480-052f746f6215",
+        "libro_id": "876b9338-3f66-4713-b951-c4b9aead3907",
+        "usuario_id": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "pagina_inicio": 0,
+        "pagina_fin": 45,
+        "inicio_utc": "2026-11-28T03:45:44.345011+00:00",
+        "fin_utc": "2026-11-28T03:52:34.934643+00:00",
+        "minutos_pausa": 0.14979703333333333,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "d6e8b8fb-f6e6-4ca8-a474-6eb7bf2ab99a",
+        "libro_id": "876b9338-3f66-4713-b951-c4b9aead3907",
+        "usuario_id": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "pagina_inicio": 45,
+        "pagina_fin": 60,
+        "inicio_utc": "2026-11-28T03:53:33.906882+00:00",
+        "fin_utc": "2026-11-28T03:55:21.874036+00:00",
+        "minutos_pausa": 0.09706808333333333,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "020d0058-7f7d-474a-84e3-2ae8ff3555d3",
+        "libro_id": "682b6d54-d4d6-47e1-901f-31fdb4bd5794",
+        "usuario_id": "6812aa17-c524-4ec9-848c-6bcfb1861f76",
+        "pagina_inicio": 0,
+        "pagina_fin": 10,
+        "inicio_utc": "2026-11-28T03:58:43.295519+00:00",
+        "fin_utc": "2026-11-28T04:00:38.425847+00:00",
+        "minutos_pausa": 0.06502385000000001,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "80f748b0-1716-4d3b-bb28-39aea8e9cf15",
+        "libro_id": "682b6d54-d4d6-47e1-901f-31fdb4bd5794",
+        "usuario_id": "6812aa17-c524-4ec9-848c-6bcfb1861f76",
+        "pagina_inicio": 10,
+        "pagina_fin": 40,
+        "inicio_utc": "2026-11-28T04:00:59.769406+00:00",
+        "fin_utc": "2026-11-28T04:02:34.999358+00:00",
+        "minutos_pausa": 0.2513359666666667,
+        "estado": "GUARDADA"
+    },
+    {
+        "id_sesion": "9d24ae67-b40a-4a2c-9410-86ee364a7bed",
+        "libro_id": "682b6d54-d4d6-47e1-901f-31fdb4bd5794",
+        "usuario_id": "6812aa17-c524-4ec9-848c-6bcfb1861f76",
+        "pagina_inicio": 41,
+        "pagina_fin": 50,
+        "inicio_utc": "2026-11-28T04:49:03.086161+00:00",
+        "fin_utc": "2026-11-28T04:49:31.013303+00:00",
+        "minutos_pausa": 0.0620972,
+        "estado": "GUARDADA"
     }
 ]

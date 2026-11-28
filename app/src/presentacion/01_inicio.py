@@ -75,7 +75,18 @@ def construir(ui) -> ft.Control:
 
     return ft.Column(
         [
-            texto(f"Hola {ui.usuario['apodo']}", 26, negrita=True, centrado=True),
+            ft.Row(
+                [
+                    texto(f"Hola {ui.usuario['apodo']}", 26, negrita=True),
+                    ft.IconButton(
+                        icon=ft.Icons.LOGOUT,
+                        icon_color=ROJO,
+                        tooltip="Cerrar sesión",
+                        on_click=lambda e: ui.cerrar_sesion_usuario(),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            ),
             tarjeta_libro,
             ft.Row(
                 [

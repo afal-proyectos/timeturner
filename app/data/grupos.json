@@ -12,5 +12,12 @@
         "codigo_acceso": "8Q68LS",
         "admin_id": "a95d4e7d-888c-490a-952e-7a1dca087227",
         "fecha_creacion": "2026-11-27T15:20:31.172644+00:00"
+    },
+    {
+        "id_grupo": "37d68949-6203-4069-b901-b297ed8b9146",
+        "nombre": "Amigos Por Siempre",
+        "codigo_acceso": "T7ZOO3",
+        "admin_id": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "fecha_creacion": "2026-11-28T04:45:06.071552+00:00"
     }
 ]

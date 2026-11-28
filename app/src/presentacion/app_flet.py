@@ -159,6 +159,20 @@ class ControladorUI:
         self._actualizar_barra()
         self.navegar("01_inicio")
 
+    def cerrar_sesion_usuario(self) -> None:
+        if self.sesion_activa:
+            self.mensaje = "Termina la sesión de lectura antes de cerrar sesión."
+            self.refrescar_vista()
+            return
+        self._parar.set()
+        self.usuario = None
+        self.libro_activo = None
+        self.sesion = None
+        self.mensaje = ""
+        self.contenedor.content = None
+        self._actualizar_barra()  # vuelve a bloquear la barra inferior
+        self.abrir_dialogo("10_cuenta")
+
     # ---------------- Datos de biblioteca ----------------
     def resumen_libros(self, usuario_id: str | None = None) -> list[dict]:
         """Libros de un usuario (por defecto el actual), del último leído al más antiguo."""

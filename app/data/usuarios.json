@@ -23,5 +23,21 @@
         "clave_hash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
         "rol": "Lector",
         "fecha_registro": "2026-11-25T15:09:19.885659+00:00"
+    },
+    {
+        "id_usuario": "6f2fa089-96f5-4921-af72-d5361e7e032b",
+        "email": "hola@hotmail.es",
+        "apodo": "Alma",
+        "clave_hash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
+        "rol": "Lector",
+        "fecha_registro": "2026-11-28T03:42:42.685955+00:00"
+    },
+    {
+        "id_usuario": "6812aa17-c524-4ec9-848c-6bcfb1861f76",
+        "email": "sipo@gmail.com",
+        "apodo": "Pepa",
+        "clave_hash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
+        "rol": "Lector",
+        "fecha_registro": "2026-11-28T03:57:25.010522+00:00"
     }
 ]
